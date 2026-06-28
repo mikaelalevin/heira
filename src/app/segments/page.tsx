@@ -82,12 +82,13 @@ export default function SegmentsPage() {
           </p>
         </div>
         <div className="flex gap-2.5">
-          <button
+          <a
+            href="/import"
             className="px-4 py-[9px] rounded-lg text-[13px] font-medium"
-            style={{ background: "transparent", color: "#1A1614", border: "1px solid #DDD0B5", fontFamily: "inherit", cursor: "pointer" }}
+            style={{ background: "transparent", color: "#1A1614", border: "1px solid #DDD0B5", fontFamily: "inherit", cursor: "pointer", textDecoration: "none" }}
           >
             Importera från Klaviyo
-          </button>
+          </a>
           <button
             className="flex items-center gap-1.5 px-4 py-[9px] rounded-lg text-[13px] font-medium"
             style={{ background: "#1A1614", color: "#FAF5EB", border: "none", cursor: "pointer", fontFamily: "inherit" }}

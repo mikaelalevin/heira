@@ -45,7 +45,7 @@ export interface Database {
         Row: {
           id: string;
           brand_id: string;
-          email: string;
+          email: string | null;
           first_name: string | null;
           last_name: string | null;
           created_at: string;
@@ -54,11 +54,14 @@ export interface Database {
           last_order_at: string | null;
           last_visit_at: string | null;
           total_visits: number;
+          klaviyo_id: string | null;
+          email_consent: string | null;
+          predicted_gender: string | null;
         };
         Insert: {
           id?: string;
           brand_id: string;
-          email: string;
+          email?: string | null;
           first_name?: string | null;
           last_name?: string | null;
           created_at?: string;
@@ -67,11 +70,14 @@ export interface Database {
           last_order_at?: string | null;
           last_visit_at?: string | null;
           total_visits?: number;
+          klaviyo_id?: string | null;
+          email_consent?: string | null;
+          predicted_gender?: string | null;
         };
         Update: {
           id?: string;
           brand_id?: string;
-          email?: string;
+          email?: string | null;
           first_name?: string | null;
           last_name?: string | null;
           created_at?: string;
@@ -80,6 +86,9 @@ export interface Database {
           last_order_at?: string | null;
           last_visit_at?: string | null;
           total_visits?: number;
+          klaviyo_id?: string | null;
+          email_consent?: string | null;
+          predicted_gender?: string | null;
         };
       };
       orders: {
