@@ -197,9 +197,9 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
               </div>
 
               {/* Prediction */}
-              <div className="flex items-center gap-5 flex-shrink-0 mt-0.5">
+              <div className="flex-shrink-0 text-right" style={{ minWidth: 160 }}>
                 {isGenerating ? (
-                  <div className="flex items-center gap-2 text-[12px]" style={{ color: inkMuted }}>
+                  <div className="flex items-center justify-end gap-2 text-[12px]" style={{ color: inkMuted }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
                       <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                     </svg>
@@ -209,34 +209,19 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
                   <span className="text-[11px]" style={{ color: "#C45224" }}>{err}</span>
                 ) : (
                   <>
-                    <div className="text-right">
-                      <div className="text-[10.5px] uppercase tracking-[0.06em] font-medium mb-0.5" style={{ color: inkMuted }}>Nästa köp</div>
-                      <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 14, color: ink }}>
-                        {pred.product}
-                      </div>
+                    <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 14, color: ink }}>
+                      {pred.product}
                     </div>
-                    <div className="text-right" style={{ minWidth: 72 }}>
-                      <div className="text-[10.5px] uppercase tracking-[0.06em] font-medium mb-0.5" style={{ color: inkMuted }}>Förväntas</div>
-                      <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 14, color: daysColor, fontWeight: urgentSoon ? 500 : 400 }}>
-                        {pred.date}
-                      </div>
-                      {isAi && (
-                        <div className="text-[10.5px] mt-0.5" style={{ color: daysColor }}>
-                          {actualDaysUntil === 0 ? "idag" : `om ${actualDaysUntil}d`}
-                          {urgentSoon && <span className="ml-1">●</span>}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-right" style={{ width: 80 }}>
-                      <div className="text-[10.5px] uppercase tracking-[0.06em] font-medium mb-1" style={{ color: inkMuted }}>Träffsäkerhet</div>
-                      <div className="flex items-center gap-1.5 justify-end">
-                        <div className="w-10 rounded-full overflow-hidden" style={{ height: 3, background: warm }}>
-                          <div style={{ height: "100%", width: `${pred.confidence}%`, background: isAi ? "#6B4F5B" : ink, borderRadius: 2 }} />
-                        </div>
-                        <span className="text-[11px] font-semibold" style={{ color: isAi ? "#6B4F5B" : ink }}>
-                          {pred.confidence}%
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-end gap-2 mt-1">
+                      <span className="text-[11.5px]" style={{ color: daysColor, fontWeight: urgentSoon ? 500 : 400 }}>
+                        {pred.date}{urgentSoon && <span className="ml-1">●</span>}
+                      </span>
+                      <span
+                        className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                        style={{ background: "#F2E8D0", color: isAi ? "#6B4F5B" : ink }}
+                      >
+                        {pred.confidence}%
+                      </span>
                     </div>
                   </>
                 )}
