@@ -63,6 +63,7 @@ export interface SegmentStats {
   tag: string;
   customer_count: number;
   avg_spent: number;
+  active_pct: number;
 }
 
 function isVip(c: CustomerForSegment): boolean {
@@ -111,6 +112,8 @@ export function filterSegment(
 export function computeSegmentStats(
   customers: CustomerForSegment[]
 ): SegmentStats[] {
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86_400_000).toISOString();
+
   return (Object.keys(SEGMENT_META) as SegmentType[]).map((type) => {
     const filtered = filterSegment(type, customers);
     const count = filtered.length;
@@ -120,6 +123,17 @@ export function computeSegmentStats(
             filtered.reduce((s, c) => s + (c.total_spent ?? 0), 0) / count
           )
         : 0;
-    return { type, ...SEGMENT_META[type], customer_count: count, avg_spent: avgSpent };
+    const activeCount = filtered.filter(
+      (c) => c.last_order_at && c.last_order_at >= ninetyDaysAgo
+    ).length;
+    const activePct = count > 0 ? Math.round((activeCount / count) * 100) : 0;
+
+    return {
+      type,
+      ...SEGMENT_META[type],
+      customer_count: count,
+      avg_spent: avgSpent,
+      active_pct: activePct,
+    };
   });
 }

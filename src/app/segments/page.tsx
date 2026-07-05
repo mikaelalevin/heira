@@ -1,66 +1,29 @@
-export default function SegmentsPage() {
-  const segments = [
-    {
-      id: "vip",
-      name: "VIP-kunder",
-      desc: "Dina bästa kunder med tillgång till VIP-rabatt och exklusiva erbjudanden.",
-      tag: "Topp 5%",
-      gradient: "linear-gradient(135deg, #C9A961 0%, #8A7038 100%)",
-      customers: "312",
-      ltv: "42 800 kr",
-      active: "96%",
-    },
-    {
-      id: "stammisar",
-      name: "Stammisar",
-      desc: "Återkommande kunder som handlar regelbundet varje säsong.",
-      tag: "Mest värdefull",
-      gradient: "linear-gradient(135deg, #D9896A 0%, #C45224 100%)",
-      customers: "1 284",
-      ltv: "14 200 kr",
-      active: "92%",
-    },
-    {
-      id: "vanner-familj",
-      name: "Vänner & familj",
-      desc: "Nära relationer med tillgång till personlig rabatt och tidig tillgång.",
-      tag: "Friends & family",
-      gradient: "linear-gradient(135deg, #B8A848 0%, #998731 100%)",
-      customers: "184",
-      ltv: "9 600 kr",
-      active: "78%",
-    },
-    {
-      id: "nya",
-      name: "Nya kunder",
-      desc: "Första köpet inom 30 dagar. Viktigt att skapa ett andra köp snabbt.",
-      tag: "Nya",
-      gradient: "linear-gradient(135deg, #1A1614 0%, #3D3530 100%)",
-      customers: "486",
-      ltv: "980 kr",
-      active: "34%",
-    },
-    {
-      id: "inaktiva",
-      name: "Inaktiva kunder",
-      desc: "Har inte handlat på 90+ dagar men har historik hos dig.",
-      tag: "Inaktiva",
-      gradient: "linear-gradient(135deg, #C4B8A8 0%, #9A8878 100%)",
-      customers: "1 642",
-      ltv: "6 200 kr",
-      active: "42%",
-    },
-    {
-      id: "pa-vag-bort",
-      name: "På väg bort",
-      desc: "Var aktiva för 60–90 dagar sen. Behöver en anledning att komma tillbaka.",
-      tag: "Churn-risk",
-      gradient: "linear-gradient(135deg, #7D2027 0%, #4A1218 100%)",
-      customers: "412",
-      ltv: "9 100 kr",
-      active: "68%",
-    },
-  ];
+import { createClient } from "@/lib/supabase/server";
+import { getBrandId } from "@/lib/brand";
+import { computeSegmentStats } from "@/lib/segments";
+
+export default async function SegmentsPage() {
+  const supabase = await createClient();
+  const brandId = await getBrandId();
+
+  const { data: customersData } = await supabase
+    .from("customers")
+    .select("email, total_spent, order_count, last_order_at")
+    .eq("brand_id", brandId);
+
+  const customers = (customersData ?? []) as {
+    email: string;
+    total_spent: number | null;
+    order_count: number | null;
+    last_order_at: string | null;
+  }[];
+
+  const segments = computeSegmentStats(customers);
+
+  const ink = "#1A1614";
+  const inkMuted = "#8A6E55";
+  const inkSoft = "#5A4232";
+  const border = "#DDD0B5";
 
   return (
     <div className="animate-fade-in">
@@ -72,65 +35,175 @@ export default function SegmentsPage() {
               fontWeight: 400,
               fontSize: 34,
               letterSpacing: "-0.01em",
-              color: "#1A1614",
+              color: ink,
             }}
           >
             Segment
           </h1>
-          <p className="mt-1.5" style={{ color: "#8A6E55", fontSize: 14 }}>
-            6 AI-genererade segment som uppdateras automatiskt baserat på beteende.
+          <p className="mt-1.5" style={{ color: inkMuted, fontSize: 14 }}>
+            {segments.filter((s) => s.customer_count > 0).length} aktiva segment · uppdateras automatiskt baserat på kundbeteende.
           </p>
         </div>
         <div className="flex gap-2.5">
           <a
             href="/import"
             className="px-4 py-[9px] rounded-lg text-[13px] font-medium"
-            style={{ background: "transparent", color: "#1A1614", border: "1px solid #DDD0B5", fontFamily: "inherit", cursor: "pointer", textDecoration: "none" }}
+            style={{
+              background: "transparent",
+              color: ink,
+              border: `1px solid ${border}`,
+              fontFamily: "inherit",
+              textDecoration: "none",
+            }}
           >
             Importera från Klaviyo
           </a>
-          <button
+          <a
+            href="/campaigns"
             className="flex items-center gap-1.5 px-4 py-[9px] rounded-lg text-[13px] font-medium"
-            style={{ background: "#1A1614", color: "#FAF5EB", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+            style={{
+              background: ink,
+              color: "#FAF5EB",
+              border: "none",
+              fontFamily: "inherit",
+              textDecoration: "none",
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
-            Skapa segment
-          </button>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+            </svg>
+            Skapa kampanj
+          </a>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {segments.map((seg) => (
           <a
-            key={seg.id}
-            href={`/segments/${seg.id}`}
+            key={seg.type}
+            href={`/campaigns`}
             className="flex flex-col rounded-2xl overflow-hidden transition-all"
-            style={{ background: "#FFFFFF", border: "1px solid #DDD0B5", textDecoration: "none" }}
+            style={{
+              background: "#FFFFFF",
+              border: `1px solid ${border}`,
+              textDecoration: "none",
+              opacity: seg.customer_count === 0 ? 0.45 : 1,
+            }}
           >
-            <div className="relative overflow-hidden" style={{ height: 110, background: seg.gradient }}>
-              <div className="absolute inset-0" style={{ opacity: 0.15, backgroundImage: "radial-gradient(circle at 30% 30%, white 0.5px, transparent 1px)", backgroundSize: "22px 22px" }} />
+            <div
+              className="relative overflow-hidden"
+              style={{ height: 110, background: seg.gradient }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  opacity: 0.15,
+                  backgroundImage:
+                    "radial-gradient(circle at 30% 30%, white 0.5px, transparent 1px)",
+                  backgroundSize: "22px 22px",
+                }}
+              />
               <span
                 className="absolute text-[10.5px] uppercase tracking-[0.08em] font-semibold px-[9px] py-[4px] rounded-xl"
-                style={{ top: 14, left: 16, background: "rgba(255,255,255,0.92)", color: "#1A1614" }}
+                style={{
+                  top: 14,
+                  left: 16,
+                  background: "rgba(255,255,255,0.92)",
+                  color: ink,
+                }}
               >
                 {seg.tag}
               </span>
+              {seg.customer_count === 0 && (
+                <span
+                  className="absolute text-[10px] uppercase tracking-[0.06em] font-medium px-2.5 py-1 rounded-lg"
+                  style={{
+                    top: 14,
+                    right: 16,
+                    background: "rgba(0,0,0,0.35)",
+                    color: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  Tomt
+                </span>
+              )}
             </div>
             <div className="p-5">
-              <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 19, fontWeight: 500, color: "#1A1614" }}>{seg.name}</div>
-              <div className="mt-1 text-[13px]" style={{ color: "#5A4232" }}>{seg.desc}</div>
-              <div className="flex justify-between mt-4 pt-3.5" style={{ borderTop: "1px solid #DDD0B5" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-fraunces), serif",
+                  fontSize: 19,
+                  fontWeight: 500,
+                  color: ink,
+                }}
+              >
+                {seg.name}
+              </div>
+              <div className="mt-1 text-[13px]" style={{ color: inkSoft }}>
+                {seg.description}
+              </div>
+              <div
+                className="flex justify-between mt-4 pt-3.5"
+                style={{ borderTop: `1px solid ${border}` }}
+              >
                 <div>
-                  <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: "#8A6E55" }}>Kunder</div>
-                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 17, color: "#1A1614", marginTop: 2 }}>{seg.customers}</div>
+                  <div
+                    className="text-[10.5px] uppercase tracking-[0.08em] font-medium"
+                    style={{ color: inkMuted }}
+                  >
+                    Kunder
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-fraunces), serif",
+                      fontSize: 17,
+                      color: ink,
+                      marginTop: 2,
+                    }}
+                  >
+                    {seg.customer_count > 0 ? seg.customer_count.toLocaleString("sv") : "–"}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: "#8A6E55" }}>Snitt köpvärde</div>
-                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 17, color: "#1A1614", marginTop: 2 }}>{seg.ltv}</div>
+                  <div
+                    className="text-[10.5px] uppercase tracking-[0.08em] font-medium"
+                    style={{ color: inkMuted }}
+                  >
+                    Snitt köpvärde
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-fraunces), serif",
+                      fontSize: 17,
+                      color: ink,
+                      marginTop: 2,
+                    }}
+                  >
+                    {seg.avg_spent > 0 ? seg.avg_spent.toLocaleString("sv") + " kr" : "–"}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: "#8A6E55" }}>Aktiv</div>
-                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 17, color: "#1A1614", marginTop: 2 }}>{seg.active}</div>
+                  <div
+                    className="text-[10.5px] uppercase tracking-[0.08em] font-medium"
+                    style={{ color: inkMuted }}
+                  >
+                    Aktiva
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-fraunces), serif",
+                      fontSize: 17,
+                      color:
+                        seg.active_pct >= 70
+                          ? "#6B7A63"
+                          : seg.active_pct >= 30
+                          ? ink
+                          : "#C45224",
+                      marginTop: 2,
+                    }}
+                  >
+                    {seg.customer_count > 0 ? seg.active_pct + "%" : "–"}
+                  </div>
                 </div>
               </div>
             </div>
