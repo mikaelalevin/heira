@@ -80,18 +80,29 @@ function segmentColor(index: number) {
 function getAutoSegment(c: Customer): { label: string; bg: string; text: string } | null {
   const now = Date.now();
   const lastOrderMs = c.last_order_at ? new Date(c.last_order_at).getTime() : null;
-  const createdMs = c.created_at ? new Date(c.created_at).getTime() : null;
   const daysSinceLast = lastOrderMs ? Math.floor((now - lastOrderMs) / 86_400_000) : null;
-  const daysSinceCreated = createdMs ? Math.floor((now - createdMs) / 86_400_000) : null;
+  const ninetyDaysAgo = now - 90 * 86_400_000;
+  const oneEightyDaysAgo = now - 180 * 86_400_000;
+  const orders = c.order_count ?? 0;
+  const spent = c.total_spent ?? 0;
 
-  if (daysSinceLast !== null && daysSinceLast > 180) {
-    return { label: "Inaktiv", bg: "#F2E8D0", text: "#5A4232" };
+  if (c.email?.endsWith("@icloud.com")) {
+    return { label: "Vänner & familj", bg: "#E8E3C8", text: "#6A5C1E" };
   }
-  if (daysSinceLast !== null && daysSinceLast > 90) {
+  if (spent >= 5000 && orders >= 3) {
+    return { label: "VIP-kunder", bg: "#F2E5C5", text: "#6A4E1B" };
+  }
+  if (orders >= 2 && lastOrderMs && lastOrderMs >= ninetyDaysAgo) {
+    return { label: "Stammisar", bg: "#F4DDD9", text: "#6F3F3A" };
+  }
+  if (orders === 1) {
+    return { label: "Nya kunder", bg: "#DDE7D7", text: "#3E4F36" };
+  }
+  if (lastOrderMs && lastOrderMs < ninetyDaysAgo && lastOrderMs >= oneEightyDaysAgo) {
     return { label: "På väg bort", bg: "#E3D5DC", text: "#4D3540" };
   }
-  if ((c.order_count ?? 0) <= 1 && (daysSinceCreated === null || daysSinceCreated <= 60)) {
-    return { label: "Ny", bg: "#DDE7D7", text: "#3E4F36" };
+  if (orders >= 1 && (!lastOrderMs || lastOrderMs < ninetyDaysAgo)) {
+    return { label: "Inaktiva", bg: "#F2E8D0", text: "#5A4232" };
   }
   return null;
 }
