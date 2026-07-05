@@ -105,7 +105,7 @@ export function filterSegment(
           c.last_order_at >= oneEightyDaysAgo
       );
     case "vanner-familj":
-      return [];
+      return customers.filter((c) => c.email.endsWith("@icloud.com"));
   }
 }
 
