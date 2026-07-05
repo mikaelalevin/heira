@@ -81,7 +81,7 @@ export default async function SegmentsPage() {
         {segments.map((seg) => (
           <a
             key={seg.type}
-            href={`/campaigns`}
+            href={`/segments/${seg.type}`}
             className="flex flex-col rounded-2xl overflow-hidden transition-all"
             style={{
               background: "#FFFFFF",
