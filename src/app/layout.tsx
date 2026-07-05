@@ -15,7 +15,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "HERIA — AI CRM för modebranschen",
+  title: "HEIRA — AI CRM för modebranschen",
   description: "AI-drivet CRM för fashion- och beauty-varumärken",
 };
 

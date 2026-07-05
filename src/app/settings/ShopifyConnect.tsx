@@ -98,7 +98,7 @@ export function ShopifyConnect({ brandId, initialDomain, initialSyncedAt, isConn
         {!connected ? (
           <>
             <p className="text-[13px] leading-relaxed mb-5" style={{ color: inkMuted }}>
-              Koppla ditt Shopify-konto för att automatiskt importera kunder och ordrar till HERIA. Du behöver en Admin API access token från din Shopify-butik.
+              Koppla ditt Shopify-konto för att automatiskt importera kunder och ordrar till HEIRA. Du behöver en Admin API access token från din Shopify-butik.
             </p>
 
             {/* Instruktioner */}
@@ -106,7 +106,7 @@ export function ShopifyConnect({ brandId, initialDomain, initialSyncedAt, isConn
               <div className="text-[11.5px] font-semibold uppercase tracking-[0.08em] mb-2" style={{ color: inkMuted }}>Så här får du din access token</div>
               <ol className="text-[12.5px] leading-relaxed flex flex-col gap-1" style={{ color: ink }}>
                 <li>1. Gå till din Shopify Admin → <strong>Inställningar → Appar → Utveckla appar</strong></li>
-                <li>2. Klicka <strong>Skapa app</strong> → namnge den "HERIA"</li>
+                <li>2. Klicka <strong>Skapa app</strong> → namnge den "HEIRA"</li>
                 <li>3. Under <strong>API-behörigheter</strong> — aktivera läsåtkomst för Kunder och Ordrar</li>
                 <li>4. Klicka <strong>Installera app</strong> → kopiera Admin API access token</li>
               </ol>

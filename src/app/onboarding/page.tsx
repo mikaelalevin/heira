@@ -195,7 +195,7 @@ export default function OnboardingPage() {
               className="text-2xl tracking-widest"
               style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: ink }}
             >
-              HERIA
+              HEIRA
             </span>
           </div>
           <div className="flex gap-2">
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
                 Du är redo!
               </h2>
               <p className="text-sm mb-8" style={{ color: inkMuted, lineHeight: 1.6 }}>
-                Dina kunddata är importerade. HERIA är redo att börja analysera och generera insikter.
+                Dina kunddata är importerade. HEIRA är redo att börja analysera och generera insikter.
               </p>
               <button
                 onClick={() => router.push("/dashboard")}

@@ -47,7 +47,7 @@ export default function LoginPage() {
               color: "#1A1614",
             }}
           >
-            HERIA
+            HEIRA
           </span>
         </div>
 

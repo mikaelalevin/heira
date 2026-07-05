@@ -102,7 +102,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
       <div className="flex items-center justify-between px-2 mb-2">
         <div className="flex items-baseline gap-2">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C45224" }} />
-          <span className="text-[28px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HERIA</span>
+          <span className="text-[28px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HEIRA</span>
         </div>
         {/* Close button — mobile only */}
         <button
@@ -161,7 +161,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
         style={{ height: 52, background: "#FAF5EB", borderBottom: "1px solid #DDD0B5" }}>
         <div className="flex items-baseline gap-2">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C45224" }} />
-          <span className="text-[22px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HERIA</span>
+          <span className="text-[22px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HEIRA</span>
         </div>
         <button onClick={() => setMobileOpen(true)} className="flex flex-col justify-center gap-[5px] w-9 h-9 rounded-lg"
           style={{ background: "transparent", border: "none", cursor: "pointer", padding: "8px 6px" }}>

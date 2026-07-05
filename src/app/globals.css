@@ -41,19 +41,19 @@
   --radius-xl: calc(var(--radius) * 1.4);
 
   /* MUSE brand tokens */
-  --color-heria-bg: #FAF5EB;
-  --color-heria-card: #FFFFFF;
-  --color-heria-warm: #F2E8D0;
-  --color-heria-ink: #1A1614;
-  --color-heria-ink-soft: #5A4232;
-  --color-heria-ink-muted: #8A6E55;
-  --color-heria-border: #DDD0B5;
-  --color-heria-rose: #D9896A;
-  --color-heria-rose-deep: #C45224;
-  --color-heria-sage: #A8B5A0;
-  --color-heria-sage-deep: #6B7A63;
-  --color-heria-gold: #C9A961;
-  --color-heria-plum: #6B4F5B;
+  --color-heira-bg: #FAF5EB;
+  --color-heira-card: #FFFFFF;
+  --color-heira-warm: #F2E8D0;
+  --color-heira-ink: #1A1614;
+  --color-heira-ink-soft: #5A4232;
+  --color-heira-ink-muted: #8A6E55;
+  --color-heira-border: #DDD0B5;
+  --color-heira-rose: #D9896A;
+  --color-heira-rose-deep: #C45224;
+  --color-heira-sage: #A8B5A0;
+  --color-heira-sage-deep: #6B7A63;
+  --color-heira-gold: #C9A961;
+  --color-heira-plum: #6B4F5B;
 }
 
 :root {
@@ -107,11 +107,11 @@
   font-family: var(--font-fraunces), Georgia, serif;
 }
 
-.shadow-heria {
+.shadow-heira {
   box-shadow: 0 1px 2px rgba(26, 22, 20, 0.04), 0 4px 16px rgba(26, 22, 20, 0.04);
 }
 
-.shadow-heria-hover {
+.shadow-heira-hover {
   box-shadow: 0 2px 4px rgba(26, 22, 20, 0.06), 0 12px 32px rgba(26, 22, 20, 0.08);
 }
 
