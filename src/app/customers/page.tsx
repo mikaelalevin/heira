@@ -14,7 +14,7 @@ export default async function CustomersPage() {
       .order("name"),
     supabase
       .from("customers")
-      .select("id, email, first_name, last_name, total_spent, order_count, sales_rep_id, phone, last_order_at, created_at", { count: "exact" })
+      .select("id, email, first_name, last_name, total_spent, order_count, sales_rep_id, phone, last_order_at, created_at, ai_prediction", { count: "exact" })
       .eq("brand_id", brandId)
       .order("total_spent", { ascending: false })
       .limit(100),
@@ -38,6 +38,7 @@ export default async function CustomersPage() {
     phone: string | null;
     last_order_at: string | null;
     created_at: string | null;
+    ai_prediction: Record<string, unknown> | null;
   }[];
 
   const customerIds = customers.map((c) => c.id);

@@ -27,6 +27,15 @@ interface Customer {
   phone?: string | null;
   last_order_at?: string | null;
   created_at?: string | null;
+  ai_prediction?: Record<string, unknown> | null;
+}
+
+function getRealPrediction(c: Customer): { product: string; date: string; confidence: number } | null {
+  const p = c.ai_prediction;
+  if (!p || typeof p.product !== "string" || typeof p.date !== "string" || typeof p.confidence !== "number") {
+    return null;
+  }
+  return { product: p.product, date: p.date, confidence: p.confidence };
 }
 
 interface MockCustomer {
@@ -421,7 +430,7 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                         </td>
                         <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{ltv}</td>
                         {(() => {
-                          const pred = generateTablePrediction(c);
+                          const pred = getRealPrediction(c) ?? generateTablePrediction(c);
                           return (
                             <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
                               <div className="text-[13px] font-medium" style={{ color: ink }}>{pred.product}</div>
