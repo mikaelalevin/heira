@@ -147,7 +147,11 @@ INSTRUKTIONER:
 - Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat
 - Max 4 meningar — kortare är bättre
 - Avsluta med ett konkret nästa steg: boka tid, kom in, ta en titt
-- Signera med säljarens namn: "${rep_name ?? "teamet på " + brand.name}"${rep_email ? ` och e-post: ${rep_email}` : ""}
+${
+  isRodebjer
+    ? `- Signera enligt BRAND VOICE-signaturen ovan — aldrig med säljarens namn`
+    : `- Signera med säljarens namn: "${rep_name ?? "teamet på " + brand.name}"${rep_email ? ` och e-post: ${rep_email}` : ""}`
+}
 - Inga emojis, inga utropstecken i onödan
 - Känn igen kunden som en stammis om de handlat mer än 2 ggr
 
