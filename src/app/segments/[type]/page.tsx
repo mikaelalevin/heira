@@ -1,12 +1,15 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
+import { getMoodGradient } from "@/lib/mood-gradients";
 import {
   filterSegment,
   SEGMENT_META,
   type SegmentType,
   type CustomerForSegment,
 } from "@/lib/segments";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const VALID_TYPES = Object.keys(SEGMENT_META) as SegmentType[];
 
@@ -52,22 +55,60 @@ export default async function SegmentDetailPage({
 }) {
   const { type } = await params;
 
-  if (!VALID_TYPES.includes(type as SegmentType)) notFound();
-  const segmentType = type as SegmentType;
-  const meta = SEGMENT_META[segmentType];
-  const aiSuggestion = SEGMENT_AI_SUGGESTION[segmentType];
-
   const supabase = await createClient();
   const brandId = await getBrandId();
 
-  const { data: customersData } = await supabase
-    .from("customers")
-    .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, ai_prediction")
-    .eq("brand_id", brandId)
-    .order("total_spent", { ascending: false });
+  let meta: { name: string; description: string; gradient: string; tag: string };
+  let aiSuggestion: string;
+  let segmentCustomers: CustomerRow[];
 
-  const allCustomers = (customersData ?? []) as CustomerRow[];
-  const segmentCustomers = filterSegment(segmentType, allCustomers) as CustomerRow[];
+  if (UUID_RE.test(type)) {
+    const { data: segmentRow } = await supabase
+      .from("segments")
+      .select("id, name, description, mood_gradient, ai_suggestion")
+      .eq("id", type)
+      .eq("brand_id", brandId)
+      .maybeSingle();
+    if (!segmentRow) notFound();
+
+    const { data: memberships } = await supabase
+      .from("segment_memberships")
+      .select("customer_id")
+      .eq("segment_id", type);
+    const customerIds = (memberships ?? []).map((m) => m.customer_id as string);
+
+    const { data: customersData } =
+      customerIds.length > 0
+        ? await supabase
+            .from("customers")
+            .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, ai_prediction")
+            .in("id", customerIds)
+            .order("total_spent", { ascending: false })
+        : { data: [] as CustomerRow[] };
+
+    segmentCustomers = (customersData ?? []) as CustomerRow[];
+    meta = {
+      name: segmentRow.name,
+      description: segmentRow.description,
+      gradient: getMoodGradient(segmentRow.mood_gradient),
+      tag: "AI-segment",
+    };
+    aiSuggestion = segmentRow.ai_suggestion ?? "";
+  } else {
+    if (!VALID_TYPES.includes(type as SegmentType)) notFound();
+    const segmentType = type as SegmentType;
+    meta = SEGMENT_META[segmentType];
+    aiSuggestion = SEGMENT_AI_SUGGESTION[segmentType];
+
+    const { data: customersData } = await supabase
+      .from("customers")
+      .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, ai_prediction")
+      .eq("brand_id", brandId)
+      .order("total_spent", { ascending: false });
+
+    const allCustomers = (customersData ?? []) as CustomerRow[];
+    segmentCustomers = filterSegment(segmentType, allCustomers) as CustomerRow[];
+  }
 
   const count = segmentCustomers.length;
   const avgSpent =
@@ -181,7 +222,7 @@ export default async function SegmentDetailPage({
         </div>
         {count > 0 && (
           <a
-            href={`/campaigns?segment=${segmentType}`}
+            href={`/campaigns?segment=${type}`}
             className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-medium ml-auto"
             style={{ background: ink, color: bg, textDecoration: "none", fontFamily: "inherit" }}
           >
@@ -330,7 +371,7 @@ export default async function SegmentDetailPage({
             </p>
           </div>
           <a
-            href={`/campaigns?segment=${segmentType}`}
+            href={`/campaigns?segment=${type}`}
             className="flex items-center gap-1.5 px-5 py-3 rounded-xl text-[13px] font-medium flex-shrink-0"
             style={{ background: ink, color: bg, textDecoration: "none", fontFamily: "inherit" }}
           >

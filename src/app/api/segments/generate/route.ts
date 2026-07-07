@@ -154,6 +154,19 @@ Analysera kundbasen för "${brandName}" och skapa 6–8 segment unika för just 
 KUNDDATA:
 ${JSON.stringify(summary, null, 2)}
 
+BRAND_VOICE:
+Detta brand är Rodebjer — ett svenskt premium fashion-varumärke med editoriell, poetisk och lågmäld ton. De pratar om sina kunder som "darlings", "muses" och "the community". Deras estetik är mjuk tailoring, silke, alpaca, jordnära färger. Undvik korporativa termer som "VIP", "toppkunder" eller "high-value". Använd istället varmt, personligt språk.
+
+Exempel på segmentnamn i Rodebjers ton:
+- Darlings — de mest värdefulla, återkommande kunder
+- Muses — kunder som köper varje säsongssläpp först
+- New Loves — första-gångs-kunder
+- The Regulars — trogen kärna, handlar minst 2 gånger per år
+- Quiet Ones — har handlat men gått tyst, väntar på rätt sak
+- Drifting — börjar tappa kontakten, behöver återkoppling
+
+Ge segmenten liknande värme men landa i namn som passar just DENNA brands data — kopiera inte listan ovan rakt av utan anpassa till mönster du ser.
+
 REGLER:
 - Namnge segmenten kreativt på svenska — INTE generiska etiketter som "VIP-kunder" eller "Inaktiva kunder"
 - Fånga vad datan faktiskt visar: säsongsmönster, köpbeteende, lojalitet, återvändande mönster

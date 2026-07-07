@@ -25,6 +25,13 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   const salesReps = (repsData ?? []) as { id: string; name: string; color: string }[];
 
+  const { count: segmentCount } = brandData
+    ? await supabase
+        .from("segments")
+        .select("id", { count: "exact", head: true })
+        .eq("brand_id", brandData.id)
+    : { count: 0 };
+
   const initials = user?.email
     ? user.email.split("@")[0].slice(0, 2).toUpperCase()
     : "–";
@@ -36,6 +43,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         userInitials={initials}
         userEmail={user?.email ?? ""}
         salesReps={salesReps}
+        segmentCount={segmentCount ?? 0}
       />
       <main className="flex-1 min-w-0 pt-[52px] md:pt-0 px-4 py-6 md:px-12 md:py-8 pb-16" style={{ maxWidth: 1400 }}>
         {children}
