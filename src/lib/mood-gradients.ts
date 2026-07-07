@@ -9,6 +9,23 @@ export const MOOD_GRADIENTS: Record<string, string> = {
   night: "linear-gradient(135deg, #7D2027 0%, #4A1218 100%)",
 };
 
+const RODEBJER_MOODS: Record<string, string> = {
+  rose:   "linear-gradient(135deg, #E8D5C8 0%, #B08B70 100%)",  // Opulent Rose Paper
+  ink:    "linear-gradient(135deg, #212326 0%, #4A4A48 100%)",  // Deras svarta
+  sand:   "linear-gradient(135deg, #F0EBE0 0%, #C8BCAE 100%)",  // Paper
+  gold:   "linear-gradient(135deg, #C4B098 0%, #8A7860 100%)",  // Dovare guld
+  sage:   "linear-gradient(135deg, #C4C8B8 0%, #7A806B 100%)",  // Dov sage
+  plum:   "linear-gradient(135deg, #A08088 0%, #5A4650 100%)",  // Dov plum
+  night:  "linear-gradient(135deg, #2A2E38 0%, #14161C 100%)",  // Djup natt
+  dust:   "linear-gradient(135deg, #D8CFBE 0%, #A89880 100%)",  // Dust/tan
+};
+
+export function moodGradientsFor(brandSlug?: string): Record<string, string> {
+  const isRodebjerMode = brandSlug === "rodebjer" || process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
+  return isRodebjerMode ? RODEBJER_MOODS : MOOD_GRADIENTS;
+}
+
 export function getMoodGradient(mood: string): string {
-  return MOOD_GRADIENTS[mood] ?? MOOD_GRADIENTS.sand;
+  const palette = moodGradientsFor();
+  return palette[mood] ?? palette.sand;
 }

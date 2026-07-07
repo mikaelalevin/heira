@@ -29,6 +29,28 @@ function SettingsIcon() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
 }
 
+const isRodebjerMode = process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
+
+function Logo({ size }: { size: "desktop" | "mobile" }) {
+  if (isRodebjerMode) {
+    return (
+      <div className="flex flex-col items-start">
+        <span style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, fontSize: size === "desktop" ? 20 : 17, color: "#212326" }}>HEIRA</span>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <div style={{ width: 14, height: 1, background: "#8A8880" }} />
+          <span style={{ fontFamily: "var(--font-inter), sans-serif", fontWeight: 300, fontSize: 11, color: "#8A8880" }}>for Rodebjer</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-baseline gap-2">
+      <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C45224" }} />
+      <span className={size === "desktop" ? "text-[28px] tracking-[0.08em]" : "text-[22px] tracking-[0.08em]"} style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HEIRA</span>
+    </div>
+  );
+}
+
 interface SidebarProps {
   brandName?: string;
   userInitials?: string;
@@ -100,10 +122,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
     <>
       {/* Logo */}
       <div className="flex items-center justify-between px-2 mb-2">
-        <div className="flex items-baseline gap-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C45224" }} />
-          <span className="text-[28px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HEIRA</span>
-        </div>
+        <Logo size="desktop" />
         {/* Close button — mobile only */}
         <button
           className="md:hidden flex items-center justify-center w-8 h-8 rounded-full"
@@ -159,10 +178,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
       {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4"
         style={{ height: 52, background: "#FAF5EB", borderBottom: "1px solid #DDD0B5" }}>
-        <div className="flex items-baseline gap-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#C45224" }} />
-          <span className="text-[22px] tracking-[0.08em]" style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, color: "#1A1614" }}>HEIRA</span>
-        </div>
+        <Logo size="mobile" />
         <button onClick={() => setMobileOpen(true)} className="flex flex-col justify-center gap-[5px] w-9 h-9 rounded-lg"
           style={{ background: "transparent", border: "none", cursor: "pointer", padding: "8px 6px" }}>
           <span className="block h-[1.5px] w-full rounded" style={{ background: "#1A1614" }} />

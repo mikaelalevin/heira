@@ -123,3 +123,16 @@
 .animate-fade-in {
   animation: fadeIn 0.3s ease;
 }
+
+/* Rodebjer brand mode — active when NEXT_PUBLIC_BRAND_MODE=rodebjer */
+.rodebjer-mode {
+  --bg-primary: #FFFFFF;
+  --bg-warm: #FBF9F5;     /* Paper — inspirerat av deras egen "Paper"-färg */
+  --bg-warm-hover: #F0EBE0;
+  --ink: #212326;         /* Deras exakta text-färg från siten */
+  --ink-soft: #4A4A48;
+  --ink-muted: #8A8880;
+  --border: #E8E4DA;
+  --accent-primary: #212326;  /* Ingen färgstark accent — Rodebjer är monokrom */
+  --accent-warm: #B08B70;     /* Diskret varm nyans inspirerad av "Opulent Rose Paper" */
+}

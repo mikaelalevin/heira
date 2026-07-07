@@ -784,7 +784,7 @@ export function CampaignBuilder({ brandName, segments, salesReps }: Props) {
               className="mt-6 pt-4 text-[11px] text-center"
               style={{ borderTop: `1px solid ${border}`, color: inkMuted }}
             >
-              Skickat med HEIRA
+              {process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer" ? "With love, Rodebjer" : "Skickat med HEIRA"}
             </div>
           </div>
         </div>
