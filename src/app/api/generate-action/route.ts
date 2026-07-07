@@ -28,12 +28,47 @@ export async function POST(request: Request) {
 
   const { data: brandsData } = await supabase
     .from("brands")
-    .select("id, name")
+    .select("id, name, slug")
     .eq("id", brandId)
     .limit(1);
 
-  const brand = brandsData?.[0] as { id: string; name: string } | undefined;
+  const brand = brandsData?.[0] as { id: string; name: string; slug: string } | undefined;
   if (!brand) return Response.json({ error: "Inget varumärke hittades" }, { status: 404 });
+
+  const isRodebjer =
+    brand.slug === "rodebjer" || process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
+
+  const brandVoiceSection = isRodebjer
+    ? `
+--- BRAND VOICE: RODEBJER ---
+Du skriver som Rodebjer, ett svenskt fashion-varumärke grundat 2000 i New York av Carin Rodebjer. Er kund kallas "the strict hippie" eller "the refined eccentric" — hon är eftertänksam, konstnärlig, inte showig. Ton: poetisk men jordnära. Grundregeln är att grunda poesi i fysisk detalj (material, silhuett, referens) — aldrig hype eller känslor.
+
+REGLER:
+1. Kundtilltal: "Kära [förnamn]" på svenska, "Dear [förnamn]" på engelska — aldrig "Hej" eller "Hi"
+2. Produkter alltid med "The [Name]"-prefix: "The Karlai", "The Adela" — aldrig bara "Karlai"
+3. Beskriv plagg med material och silhuett, inte känslor: "long sleeve jersey i chalky Opulent Rose" — inte "gorgeous must-have"
+4. Inga utropstecken, aldrig
+5. Inga hype-ord: amazing, incredible, must-have, trendy, VIP, exclusive, deal, save, discount, shop now, limited time
+6. Korta stycken, editorial mellanrum
+7. Avsluta med signatur:
+   - Svenska: "Med varma hälsningar,\\nRodebjer" eller bara "x,\\nRodebjer"
+   - Engelska: "With love,\\nRodebjer" eller "x,\\nRodebjer"
+8. Aldrig från en specifik säljare/person — Rodebjer talar som ett enat brand
+
+EXEMPEL PÅ RODEBJER-COPY (från deras egen webshop):
+"An everyday layering item referencing dance wear. Long sleeve, tight fitting jersey silhouette in a seasonal chalky Opulent Rose print."
+
+EXEMPEL PÅ EN RODEBJER-MEJL TILL EN KUND:
+"Kära Elsa,
+
+The Karlai återkommer för hösten — den här gången i Opulent Rose, med långa ärmar och tumhål för de lagrade dagarna som väntar. Bomullsjersey, gjord i Portugal.
+
+Vi tänkte den kunde bli en av dina.
+
+Med varma hälsningar,
+Rodebjer"
+`
+    : "";
 
   const [{ data: customerData }, { data: ordersData }] = await Promise.all([
     supabase
@@ -90,7 +125,7 @@ export async function POST(request: Request) {
   const predDays = prediction?.daysUntil ?? 14;
   const predReason = prediction?.reason ?? "";
 
-  const prompt = `Du är säljarens assistent på ${brand.name}, ett mode/beauty-varumärke med varmt och personligt tonläge (tänk Studio Acacia, COS, Totême — sofistikerat men mänskligt).
+  const prompt = `Du är säljarens assistent på ${brand.name}, ett mode/beauty-varumärke med sofistikerat och personligt tonläge.
 
 UPPGIFT: Skriv ett kort, personligt utgående meddelande som säljaren ska skicka direkt till kunden. Det ska kännas som att en verklig person skriver — inte ett nyhetsbrev, inte en säljpitch.
 
@@ -106,7 +141,7 @@ AI-PREDIKTION:
 - Kunden förväntas köpa: ${predProduct}
 - Inom: ${predDays} dagar (ca ${predDate})
 ${predReason ? `- Anledning: ${predReason}` : ""}
-
+${brandVoiceSection}
 INSTRUKTIONER:
 - Skriv på svenska, varmt och personligt
 - Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat
