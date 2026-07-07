@@ -34,10 +34,9 @@ interface SidebarProps {
   userInitials?: string;
   userEmail?: string;
   salesReps?: SalesRep[];
-  segmentCount?: number;
 }
 
-export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", userEmail = "", salesReps = [], segmentCount = 0 }: SidebarProps) {
+export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", userEmail = "", salesReps = [] }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -54,7 +53,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
     { href: "/dashboard", label: "Översikt", icon: <DashboardIcon /> },
     { href: "/ai-recommendations", label: "AI-prediktioner", icon: <AiIcon /> },
     { href: "/customers", label: "Alla kunder", icon: <CustomersIcon /> },
-    { href: "/segments", label: "Segment", icon: <SegmentsIcon />, badge: segmentCount > 0 ? segmentCount : undefined },
+    { href: "/segments", label: "Segment", icon: <SegmentsIcon />, badge: 6 },
     { href: "/campaigns", label: "Kampanjer", icon: <CampaignsIcon /> },
   ];
   const insightsNav: NavItem[] = [

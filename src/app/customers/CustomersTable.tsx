@@ -43,7 +43,7 @@ interface MockCustomer {
 
 const MOCK_CUSTOMERS: MockCustomer[] = [
   { initials: "EW", gradient: "linear-gradient(135deg,#D9896A,#C45224)", name: "Elsa Wikström", email: "elsa.w@gmail.com", segment: "Stammisar", segColor: "#F4DDD9", segText: "#6F3F3A", ltv: "32 400 kr", next: "22 maj · Linen Mini Dress" },
-  { initials: "AL", gradient: "linear-gradient(135deg,#C9A961,#8A7038)", name: "Amanda Lundqvist", email: "amanda@studio.se", segment: "VIP-kunder", segColor: "#F2E5C5", segText: "#6A4E1B", ltv: "41 800 kr", next: "24 maj · Cashmere Cardigan" },
+  { initials: "AL", gradient: "linear-gradient(135deg,#C9A961,#8A7038)", name: "Amanda Lundqvist", email: "amanda@studio.se", segment: "Darlings", segColor: "#F2E5C5", segText: "#6A4E1B", ltv: "41 800 kr", next: "24 maj · Cashmere Cardigan" },
   { initials: "FM", gradient: "linear-gradient(135deg,#1A1614,#4D3A35)", name: "Felicia Magnusson", email: "felicia.m@me.com", segment: "Nya kunder", segColor: "#1A1614", segText: "#FAF5EB", ltv: "11 200 kr", next: "20 maj · Oversized Blazer" },
   { initials: "VK", gradient: "linear-gradient(135deg,#A8B5A0,#6B7A63)", name: "Vera Karlsson", email: "vera.k@gmail.com", segment: "Vänner & familj", segColor: "#DDE7D7", segText: "#3E4F36", ltv: "980 kr", next: "28 maj · Cotton T-shirt" },
   { initials: "JE", gradient: "linear-gradient(135deg,#6B4F5B,#3D2C35)", name: "Johanna Ekberg", email: "johanna.e@hotmail.com", segment: "På väg bort", segColor: "#E3D5DC", segText: "#4D3540", ltv: "14 600 kr", next: "Osäker" },
@@ -90,7 +90,7 @@ function getAutoSegment(c: Customer): { label: string; bg: string; text: string 
     return { label: "Vänner & familj", bg: "#E8E3C8", text: "#6A5C1E" };
   }
   if (spent >= 5000 && orders >= 3) {
-    return { label: "VIP-kunder", bg: "#F2E5C5", text: "#6A4E1B" };
+    return { label: "Darlings", bg: "#F2E5C5", text: "#6A4E1B" };
   }
   if (orders >= 2 && lastOrderMs && lastOrderMs >= ninetyDaysAgo) {
     return { label: "Stammisar", bg: "#F4DDD9", text: "#6F3F3A" };

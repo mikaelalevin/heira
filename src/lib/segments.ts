@@ -11,7 +11,7 @@ export const SEGMENT_META: Record<
   { name: string; description: string; gradient: string; tag: string }
 > = {
   vip: {
-    name: "VIP-kunder",
+    name: "Darlings",
     description: "Dina bästa kunder med högst köpvärde och flest ordrar.",
     gradient: "linear-gradient(135deg, #C9A961 0%, #8A7038 100%)",
     tag: "Topp 5%",
