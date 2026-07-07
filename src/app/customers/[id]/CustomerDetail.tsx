@@ -3,10 +3,14 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { generatePrediction } from "@/lib/predictions";
+import { getMoodGradient } from "@/lib/mood-gradients";
 
 interface AiPrediction {
   product: string;
+  predicted_product_sku?: string | null;
+  category?: string | null;
+  price_sek?: number | null;
+  mood_gradient?: string | null;
   date: string;
   daysUntil: number;
   confidence: number;
@@ -322,6 +326,10 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   }
 
   async function generateMessage() {
+    if (!aiPrediction) {
+      setMessageError("Generera en AI-prediktion först");
+      return;
+    }
     setGeneratingMessage(true);
     setMessageError("");
     try {
@@ -331,11 +339,11 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
         body: JSON.stringify({
           customer_id: customer.id,
           prediction: {
-            product: pred.product,
-            date: pred.date,
-            daysUntil: pred.daysUntil,
-            confidence: pred.confidence,
-            reason: pred.reason,
+            product: aiPrediction.product,
+            date: aiPrediction.date,
+            daysUntil: aiPrediction.daysUntil,
+            confidence: aiPrediction.confidence,
+            reason: aiPrediction.reason,
           },
           rep_name: assignedRep?.name ?? null,
           rep_email: assignedRep?.email ?? null,
@@ -360,8 +368,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const pred = aiPrediction ?? generatePrediction(customer, orders);
-  const isAi = !!aiPrediction;
+  const pred = aiPrediction;
   const resolvedBrandName = brandName ?? "HEIRA";
 
   return (
@@ -426,37 +433,65 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
                 <span className="text-[10.5px] uppercase tracking-[0.12em] font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  HEIRA-prediktion{isAi ? " · AI" : ""}
+                  HEIRA-prediktion{pred ? " · AI" : ""}
                 </span>
               </div>
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.9)" }}>
-                {pred.confidence}% träffsäkerhet
-              </span>
+              {pred && (
+                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.9)" }}>
+                  {pred.confidence}% träffsäkerhet
+                </span>
+              )}
             </div>
             <div className="px-6 py-5" style={{ background: "#FFFFFF" }}>
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.08em] font-medium mb-1" style={{ color: inkMuted }}>Nästa köp</div>
-                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 22, color: ink, letterSpacing: "-0.01em" }}>
-                    {pred.product}
+              {pred ? (
+                <>
+                  <div className="flex items-start gap-4 mb-4">
+                    <div
+                      className="rounded-xl flex-shrink-0"
+                      style={{ width: 56, height: 56, background: getMoodGradient(pred.mood_gradient ?? "sand") }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      {pred.category && (
+                        <div className="text-[10.5px] uppercase tracking-[0.1em] font-semibold mb-1" style={{ color: inkMuted }}>
+                          {pred.category}
+                        </div>
+                      )}
+                      <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 20, color: ink, letterSpacing: "-0.01em" }}>
+                        {pred.product}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        {pred.price_sek != null && (
+                          <span className="text-[13px] font-medium" style={{ color: ink }}>
+                            {pred.price_sek.toLocaleString("sv")} kr
+                          </span>
+                        )}
+                        {pred.predicted_product_sku && (
+                          <span className="text-[11px]" style={{ color: inkMuted }}>SKU {pred.predicted_product_sku}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-[11px] uppercase tracking-[0.08em] font-medium mb-1" style={{ color: inkMuted }}>Förväntad</div>
+                      <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 18, color: ink }}>
+                        {pred.date}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-[11px] uppercase tracking-[0.08em] font-medium mb-1" style={{ color: inkMuted }}>Förväntad</div>
-                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 22, color: ink }}>
-                    {pred.date}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: warm }}>
+                      <div style={{ height: "100%", width: `${pred.confidence}%`, background: ink, borderRadius: 2 }} />
+                    </div>
+                    <span className="text-[12px]" style={{ color: inkMuted }}>{pred.daysUntil === 1 ? "Idag" : `Om ${pred.daysUntil} dagar`}</span>
                   </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: warm }}>
-                  <div style={{ height: "100%", width: `${pred.confidence}%`, background: ink, borderRadius: 2 }} />
-                </div>
-                <span className="text-[12px]" style={{ color: inkMuted }}>{pred.daysUntil === 1 ? "Idag" : `Om ${pred.daysUntil} dagar`}</span>
-              </div>
-              <p className="text-[12.5px] leading-relaxed mb-4" style={{ color: inkMuted }}>
-                {pred.reason}
-              </p>
+                  <p className="text-[12.5px] leading-relaxed mb-4" style={{ color: inkMuted }}>
+                    {pred.reason}
+                  </p>
+                </>
+              ) : (
+                <p className="text-[13px] leading-relaxed mb-4" style={{ color: inkMuted }}>
+                  Ingen AI-prediktion genererad ännu. Klicka nedan för att låta Claude analysera köphistoriken mot produktkatalogen.
+                </p>
+              )}
               {aiError && (
                 <p className="text-[12px] mb-3" style={{ color: "#C45224" }}>{aiError}</p>
               )}
@@ -474,7 +509,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                 ) : (
                   <>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    {isAi ? "Uppdatera AI-prediktion" : "Generera AI-prediktion"}
+                    {pred ? "Uppdatera AI-prediktion" : "Generera AI-prediktion"}
                   </>
                 )}
               </button>
@@ -546,9 +581,9 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
               ) : (
                 <button
                   onClick={generateMessage}
-                  disabled={generatingMessage}
+                  disabled={generatingMessage || !pred}
                   className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg self-start"
-                  style={{ background: generatingMessage ? warm : ink, color: generatingMessage ? inkMuted : bg, border: "none", cursor: generatingMessage ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                  style={{ background: generatingMessage || !pred ? warm : ink, color: generatingMessage || !pred ? inkMuted : bg, border: "none", cursor: generatingMessage || !pred ? "not-allowed" : "pointer", fontFamily: "inherit" }}
                 >
                   {generatingMessage ? (
                     <>

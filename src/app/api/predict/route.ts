@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const brand = (brandsData?.[0] as { id: string; name: string } | undefined);
   if (!brand) return Response.json({ error: "Inget varumärke hittades" }, { status: 404 });
 
-  const [{ data: customerData }, { data: ordersData }, { data: sessionsData }] = await Promise.all([
+  const [{ data: customerData }, { data: ordersData }, { data: sessionsData }, { data: productsData }] = await Promise.all([
     supabase
       .from("customers")
       .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, notes")
@@ -42,9 +42,25 @@ export async function POST(request: Request) {
       .eq("customer_id", customer_id)
       .order("started_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("products")
+      .select("sku, name, category, product_type, price_sek, mood_gradient")
+      .eq("brand_id", brand.id),
   ]);
 
   if (!customerData) return Response.json({ error: "Kund hittades inte" }, { status: 404 });
+
+  const products = (productsData ?? []) as {
+    sku: string | null; name: string; category: string | null;
+    product_type: string | null; price_sek: number | null; mood_gradient: string | null;
+  }[];
+
+  if (products.length === 0) {
+    return Response.json(
+      { error: "Ingen produktkatalog hittades för varumärket — kör npm run seed:rodebjer först" },
+      { status: 400 }
+    );
+  }
 
   const customer = customerData as {
     email: string; first_name: string | null; last_name: string | null;
@@ -89,6 +105,10 @@ export async function POST(request: Request) {
 
   const today = new Date().toLocaleDateString("sv-SE");
 
+  const catalogText = products
+    .map((p) => `SKU:${p.sku} — ${p.name} | ${p.product_type ?? p.category ?? "okänd typ"} | ${p.price_sek ?? "?"} kr`)
+    .join("\n");
+
   const prompt = `Du är ett AI-system för ${brand.name}, ett mode/beauty-varumärke. Analysera kunddata och prediktera nästa köp.
 
 KUND: ${name}
@@ -102,14 +122,20 @@ ${ordersText}
 WEBBAKTIVITET:
 ${sessionsText}
 
+PRODUKTKATALOG:
+${catalogText}
+
 Idag: ${today}
+
+Välj en produkt från katalogen ovan som denna kund troligt köper härnäst, baserat på deras historik. Returnera exakt produktens SKU och namn från katalogen — hitta inte på egna produkter. Motivera valet i en mening som refererar till kundens tidigare köp.
 
 Svara ENBART med ett JSON-objekt, ingen annan text:
 {
-  "product": "specifikt produktnamn på svenska (t.ex. 'Lin Midi Kjol Ecru' eller 'Kashmirkofta Crème')",
+  "sku": "<exakt SKU från katalogen ovan>",
+  "name": "<exakt produktnamn från katalogen ovan>",
   "daysUntil": <heltal 1-90>,
   "confidence": <heltal 40-96>,
-  "reason": "<1-2 meningar på svenska om varför just detta köp är troligt>"
+  "reason": "<1 mening på svenska som refererar till kundens tidigare köp>"
 }`;
 
   try {
@@ -124,14 +150,23 @@ Svara ENBART med ett JSON-objekt, ingen annan text:
     if (!jsonMatch) throw new Error("Ogiltigt svar från AI");
 
     const raw = JSON.parse(jsonMatch[0]) as {
-      product?: unknown;
+      sku?: unknown;
+      name?: unknown;
       daysUntil?: unknown;
       confidence?: unknown;
       reason?: unknown;
     };
 
-    if (typeof raw.product !== "string" || typeof raw.daysUntil !== "number") {
+    if (typeof raw.sku !== "string" || typeof raw.daysUntil !== "number") {
       throw new Error("Saknade fält i AI-svar");
+    }
+
+    const matchedProduct =
+      products.find((p) => p.sku === raw.sku) ??
+      products.find((p) => p.name === raw.name);
+
+    if (!matchedProduct) {
+      throw new Error("AI valde en produkt som inte finns i katalogen — försök igen");
     }
 
     const predictedDate = new Date();
@@ -139,7 +174,11 @@ Svara ENBART med ett JSON-objekt, ingen annan text:
     const dateStr = predictedDate.toLocaleDateString("sv-SE", { day: "numeric", month: "short" }).replace(".", "");
 
     const prediction = {
-      product: raw.product,
+      product: matchedProduct.name,
+      predicted_product_sku: matchedProduct.sku,
+      category: matchedProduct.category,
+      price_sek: matchedProduct.price_sek,
+      mood_gradient: matchedProduct.mood_gradient,
       date: dateStr,
       daysUntil: raw.daysUntil,
       confidence: Math.min(96, Math.max(40, typeof raw.confidence === "number" ? raw.confidence : 60)),
