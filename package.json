@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:rodebjer": "tsx scripts/import-fw26.ts"
+    "seed:rodebjer": "tsx scripts/import-fw26.ts",
+    "seed:returns": "tsx scripts/seed-returns.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
