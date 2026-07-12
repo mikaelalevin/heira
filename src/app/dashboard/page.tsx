@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { Greeting } from "./Greeting";
+import { parseReturnStats, returnRateColor } from "@/lib/returns";
 
 const ink = "#1A1614";
 const inkMuted = "#8A6E55";
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
 
   const { data: customersData } = await supabase
     .from("customers")
-    .select("id, total_spent, order_count, last_order_at, created_at, first_name, last_name, email, ai_prediction")
+    .select("id, total_spent, order_count, last_order_at, created_at, first_name, last_name, email, ai_prediction, return_stats")
     .eq("brand_id", brandId);
 
   const customers = (customersData ?? []) as {
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
     last_order_at: string | null; created_at: string;
     first_name: string | null; last_name: string | null; email: string;
     ai_prediction: AiPrediction | null;
+    return_stats: Record<string, unknown> | null;
   }[];
 
   const aiSignals = customers
@@ -89,6 +91,14 @@ export default async function DashboardPage() {
   const churnRisk = customers.filter((c) => c.last_order_at && c.last_order_at < ninetyDaysAgo).length;
   const totalOrders = customers.reduce((s, c) => s + (c.order_count ?? 0), 0);
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+  const returnRates = customers
+    .map((c) => parseReturnStats(c.return_stats)?.return_rate)
+    .filter((r): r is number => typeof r === "number");
+  const avgReturnRate = returnRates.length > 0
+    ? returnRates.reduce((s, r) => s + r, 0) / returnRates.length
+    : null;
+  const returnValuePerOrder = avgReturnRate !== null ? Math.round(avgReturnRate * avgOrderValue) : 0;
 
   const thisWeekRevenue = ((thisWeekOrders ?? []) as { total: number }[]).reduce((s, o) => s + o.total, 0);
   const lastWeekRevenue = ((lastWeekOrders ?? []) as { total: number }[]).reduce((s, o) => s + o.total, 0);
@@ -153,7 +163,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Kund-rad */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className={`grid gap-4 mb-6 ${avgReturnRate !== null ? "grid-cols-4" : "grid-cols-3"}`}>
         <div className="rounded-2xl p-5" style={{ background: card, border: `1px solid ${border}` }}>
           <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium mb-2" style={{ color: inkMuted }}>Kunder totalt</div>
           <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 26, color: ink, lineHeight: 1 }}>{totalCustomers.toLocaleString("sv")}</div>
@@ -177,6 +187,17 @@ export default async function DashboardPage() {
               : "Inga kunder i riskzon"}
           </div>
         </div>
+        {avgReturnRate !== null && (
+          <div className="rounded-2xl p-5" style={{ background: card, border: `1px solid ${border}` }}>
+            <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium mb-2" style={{ color: inkMuted }}>Returrate (30d)</div>
+            <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 26, color: returnRateColor(avgReturnRate), lineHeight: 1 }}>
+              {Math.round(avgReturnRate * 100)}%
+            </div>
+            <div className="mt-2 text-[11.5px]" style={{ color: inkMuted }}>
+              % av intäkten som återgår — ~{returnValuePerOrder.toLocaleString("sv")} kr/order
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Senaste ordrar */}
