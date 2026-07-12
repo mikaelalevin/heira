@@ -24,10 +24,15 @@ interface Props {
   brandName: string;
   segments: SegmentStats[];
   salesReps: SalesRep[];
+  initialSegmentType?: string;
 }
 
-export function CampaignBuilder({ brandName, segments, salesReps }: Props) {
-  const [selectedSegment, setSelectedSegment] = useState(segments[1] ?? segments[0]);
+export function CampaignBuilder({ brandName, segments, salesReps, initialSegmentType }: Props) {
+  const [selectedSegment, setSelectedSegment] = useState(
+    segments.find((s) => s.type === initialSegmentType) ??
+      segments.find((s) => s.type === "nya") ??
+      segments[0]
+  );
   const [channel, setChannel] = useState("email");
   const [selectedRep, setSelectedRep] = useState<SalesRep | null>(salesReps[0] ?? null);
   const [timing, setTiming] = useState("sunday");
