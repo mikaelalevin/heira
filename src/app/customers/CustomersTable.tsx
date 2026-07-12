@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { generateTablePrediction } from "@/lib/predictions";
+import { parseReturnStats, returnRateColor } from "@/lib/returns";
 
 interface SalesRep {
   id: string;
@@ -28,6 +29,7 @@ interface Customer {
   last_order_at?: string | null;
   created_at?: string | null;
   ai_prediction?: Record<string, unknown> | null;
+  return_stats?: Record<string, unknown> | null;
 }
 
 function getRealPrediction(c: Customer): { product: string; date: string; confidence: number } | null {
@@ -116,6 +118,36 @@ function getAutoSegment(c: Customer): { label: string; bg: string; text: string 
   return null;
 }
 
+// Positions a fixed-position dropdown below its trigger button, flipping to open
+// upward when there isn't enough room below (e.g. rows near the bottom of the table).
+function useDropdownPosition(
+  open: boolean,
+  buttonRef: React.RefObject<HTMLButtonElement | null>,
+  dropdownRef: React.RefObject<HTMLDivElement | null>
+) {
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [ready, setReady] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) {
+      setReady(false);
+      return;
+    }
+    const r = buttonRef.current.getBoundingClientRect();
+    const dropdownHeight = dropdownRef.current?.offsetHeight ?? 0;
+    const spaceBelow = window.innerHeight - r.bottom;
+    const spaceAbove = r.top;
+    const openAbove = dropdownHeight > 0 && spaceBelow < dropdownHeight + 12 && spaceAbove > spaceBelow;
+    setPos({
+      top: openAbove ? Math.max(8, r.top - dropdownHeight - 4) : r.bottom + 4,
+      left: r.left,
+    });
+    setReady(true);
+  }, [open, buttonRef, dropdownRef]);
+
+  return { pos, ready };
+}
+
 function RepPicker({ customerId, currentRepId, salesReps, onAssign }: {
   customerId: string;
   currentRepId: string | null;
@@ -124,10 +156,10 @@ function RepPicker({ customerId, currentRepId, salesReps, onAssign }: {
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const currentRep = salesReps.find((r) => r.id === currentRepId);
+  const { pos, ready } = useDropdownPosition(open, buttonRef, dropdownRef);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -140,14 +172,6 @@ function RepPicker({ customerId, currentRepId, salesReps, onAssign }: {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  function handleOpen() {
-    if (buttonRef.current) {
-      const r = buttonRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left });
-    }
-    setOpen((v) => !v);
-  }
-
   async function assign(repId: string | null) {
     setSaving(true);
     setOpen(false);
@@ -158,7 +182,7 @@ function RepPicker({ customerId, currentRepId, salesReps, onAssign }: {
   }
 
   const dropdown = open ? (
-    <div ref={dropdownRef} style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999, background: "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, minWidth: 170, padding: "4px 0", boxShadow: "0 4px 16px rgba(26,22,20,0.12)" }}>
+    <div ref={dropdownRef} style={{ position: "fixed", top: pos.top, left: pos.left, visibility: ready ? "visible" : "hidden", zIndex: 9999, background: "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, minWidth: 170, padding: "4px 0", boxShadow: "0 4px 16px rgba(26,22,20,0.12)" }}>
       {salesReps.map((rep) => {
         const initials = rep.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
         const isSelected = rep.id === currentRepId;
@@ -187,7 +211,7 @@ function RepPicker({ customerId, currentRepId, salesReps, onAssign }: {
 
   return (
     <div>
-      <button ref={buttonRef} onClick={handleOpen} disabled={saving}
+      <button ref={buttonRef} onClick={() => setOpen((v) => !v)} disabled={saving}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all"
         style={{ background: currentRep ? currentRep.color + "22" : warm, color: currentRep ? currentRep.color : inkMuted, border: `1px solid ${currentRep ? currentRep.color + "44" : border}`, cursor: saving ? "wait" : "pointer", fontFamily: "inherit" }}>
         {currentRep ? (
@@ -209,9 +233,9 @@ function SegmentPicker({ customerId, assignedIds, segments, onToggle }: {
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { pos, ready } = useDropdownPosition(open, buttonRef, dropdownRef);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -223,14 +247,6 @@ function SegmentPicker({ customerId, assignedIds, segments, onToggle }: {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  function handleOpen() {
-    if (buttonRef.current) {
-      const r = buttonRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left });
-    }
-    setOpen((v) => !v);
-  }
 
   async function toggle(segmentId: string) {
     const adding = !assignedIds.includes(segmentId);
@@ -248,7 +264,7 @@ function SegmentPicker({ customerId, assignedIds, segments, onToggle }: {
   const assignedSegments = segments.filter((s) => assignedIds.includes(s.id));
 
   const dropdown = open ? (
-    <div ref={dropdownRef} style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999, background: "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, minWidth: 180, padding: "4px 0", boxShadow: "0 4px 16px rgba(26,22,20,0.12)" }}>
+    <div ref={dropdownRef} style={{ position: "fixed", top: pos.top, left: pos.left, visibility: ready ? "visible" : "hidden", zIndex: 9999, background: "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, minWidth: 180, padding: "4px 0", boxShadow: "0 4px 16px rgba(26,22,20,0.12)" }}>
       {segments.length === 0 ? (
         <p className="px-4 py-3 text-[12px]" style={{ color: inkMuted }}>Inga segment skapade ännu.</p>
       ) : (
@@ -283,7 +299,7 @@ function SegmentPicker({ customerId, assignedIds, segments, onToggle }: {
         );
       })}
       {segments.length > 0 && (
-        <button ref={buttonRef} onClick={handleOpen}
+        <button ref={buttonRef} onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1 px-2 py-[3px] rounded-lg text-[11px] font-medium"
           style={{ background: "transparent", color: inkMuted, border: `1px dashed ${border}`, cursor: "pointer", fontFamily: "inherit" }}>
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
@@ -307,6 +323,11 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
   );
   const [memberships, setMemberships] = useState<Record<string, string[]>>(initialMemberships);
   const [search, setSearch] = useState("");
+  const [returnSort, setReturnSort] = useState<"asc" | "desc" | null>(null);
+
+  function toggleReturnSort() {
+    setReturnSort((prev) => (prev === "desc" ? "asc" : prev === "asc" ? null : "desc"));
+  }
 
   function handleAssign(customerId: string, repId: string | null) {
     setRepAssignments((prev) => ({ ...prev, [customerId]: repId }));
@@ -339,6 +360,14 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
     ? MOCK_CUSTOMERS.filter((c) => (c.name + " " + c.email).toLowerCase().includes(q))
     : MOCK_CUSTOMERS;
 
+  const sortedReal = returnSort
+    ? [...filteredReal].sort((a, b) => {
+        const ra = parseReturnStats(a.return_stats)?.return_rate ?? -1;
+        const rb = parseReturnStats(b.return_stats)?.return_rate ?? -1;
+        return returnSort === "desc" ? rb - ra : ra - rb;
+      })
+    : filteredReal;
+
   const headers = ["Kund", "Segment", "Totalt köpvärde", "Predikterat nästa köp", "Säljare"];
 
   return (
@@ -370,7 +399,24 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
           <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {headers.map((h) => (
+                <th style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: inkMuted, fontWeight: 500, padding: "14px 22px", borderBottom: `1px solid ${border}`, background: warm }}>
+                  Kund
+                </th>
+                <th style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: inkMuted, fontWeight: 500, padding: "14px 22px", borderBottom: `1px solid ${border}`, background: warm }}>
+                  Segment
+                </th>
+                <th
+                  onClick={toggleReturnSort}
+                  style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: inkMuted, fontWeight: 500, padding: "14px 22px", borderBottom: `1px solid ${border}`, background: warm, cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Returrate
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={inkMuted} strokeWidth="2.5" style={{ opacity: returnSort ? 1 : 0.35, transform: returnSort === "asc" ? "rotate(180deg)" : undefined }}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </span>
+                </th>
+                {headers.slice(2).map((h) => (
                   <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: inkMuted, fontWeight: 500, padding: "14px 22px", borderBottom: `1px solid ${border}`, background: warm }}>
                     {h}
                   </th>
@@ -379,14 +425,14 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
             </thead>
             <tbody>
               {hasRealData ? (
-                filteredReal.length === 0 ? (
+                sortedReal.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
+                    <td colSpan={6} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
                       Inga kunder matchar sökningen.
                     </td>
                   </tr>
                 ) : (
-                  filteredReal.map((c) => {
+                  sortedReal.map((c) => {
                     const initials = [c.first_name, c.last_name].filter(Boolean).map((n) => n![0]).join("").toUpperCase() || c.email.slice(0, 2).toUpperCase();
                     const fullName = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email;
                     const ltv = c.total_spent ? c.total_spent.toLocaleString("sv") + " kr" : "–";
@@ -394,6 +440,7 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                     const gradient = rep ? `linear-gradient(135deg, ${rep.color}, ${rep.color}99)` : "linear-gradient(135deg, #D9896A, #C07858)";
                     const autoSeg = getAutoSegment(c);
                     const assignedSegIds = memberships[c.id] ?? [];
+                    const returnStats = parseReturnStats(c.return_stats);
 
                     return (
                       <tr key={c.id}
@@ -428,6 +475,18 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                             />
                           </div>
                         </td>
+                        <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5 }}>
+                          {returnStats ? (
+                            <span
+                              className="font-medium"
+                              style={{ color: returnRateColor(returnStats.return_rate) }}
+                            >
+                              {Math.round(returnStats.return_rate * 100)}%
+                            </span>
+                          ) : (
+                            <span style={{ color: inkMuted }}>–</span>
+                          )}
+                        </td>
                         <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{ltv}</td>
                         {(() => {
                           const pred = getRealPrediction(c) ?? generateTablePrediction(c);
@@ -455,7 +514,7 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
               ) : (
                 filteredMock.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
+                    <td colSpan={6} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
                       Inga kunder matchar sökningen.
                     </td>
                   </tr>
@@ -475,6 +534,9 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                       </td>
                       <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
                         <span className="text-[11px] font-medium px-[9px] py-[3px] rounded-xl" style={{ background: c.segColor, color: c.segText }}>{c.segment}</span>
+                      </td>
+                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
+                        <span style={{ color: inkMuted, fontSize: 13 }}>–</span>
                       </td>
                       <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{c.ltv}</td>
                       <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{c.next}</td>
