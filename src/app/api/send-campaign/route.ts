@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     supabase.from("brands").select("name").eq("id", brandId).single(),
     supabase
       .from("customers")
-      .select("email, total_spent, order_count, last_order_at")
+      .select("email, total_spent, order_count, last_order_at, return_stats")
       .eq("brand_id", brandId),
   ]);
 
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     total_spent: number | null;
     order_count: number | null;
     last_order_at: string | null;
+    return_stats: { return_rate: number; returns_count: number } | null;
   }[];
 
   const segmentCustomers = filterSegment(segment_type as SegmentType, customers);

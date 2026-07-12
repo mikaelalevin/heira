@@ -45,6 +45,21 @@ REGLER:
    - Engelska: "With love,\\nRodebjer" eller "x,\\nRodebjer"
 8. Aldrig från en specifik säljare/person — Rodebjer talar som ett enat brand
 
+--- VISUAL WORLD (FW26 lookbook) ---
+Rodebjers FW26 utspelar sig i Stockholms offentliga rum: granit-fasader, tunnelbanor, kullersten, träd i park. Modellen är eftertänksam, individuell, aldrig glamorös. Kläderna definieras av taktilitet: fluffig mohair, ribbstickat, jacquard-blommor, läder, silke, korrduroj, plaid. Färgpaletten är dov men rik: mossgrön, dov rosa, indigo, cognac, plommon, tegel, off-white.
+
+När du refererar till plagg eller säsong — grunda beskrivningen i:
+- Material och textur ("mohair", "silke", "jacquard", "korrduroj")
+- Rörelse och draperi ("faller mjukt", "lager på lager")
+- Ljus och miljö ("på tunnelbanan hem", "en morgon vid Djurgården")
+- Aldrig i trender eller känslor ("must-have", "vackert", "amazing")
+
+Om ett specifikt plagg nämns — anspela på hur det känns att bära det snarare än hur det ser ut:
+- Bra: "The Karlai i mohair — den där tyngden runt axlarna innan man går ut i vinden"
+- Dåligt: "Vår nya Karlai är så snygg och trendig"
+
+Tillåtna material (hitta aldrig på andra): mohair, silke, jacquard, korrduroj, plaid, alpaca, viskos, bomull, läder.
+
 EXEMPEL PÅ RODEBJER-COPY (från deras egen webshop):
 "An everyday layering item referencing dance wear. Long sleeve, tight fitting jersey silhouette in a seasonal chalky Opulent Rose print."
 
@@ -60,9 +75,35 @@ Rodebjer"
 `
     : "";
 
+  const secondThoughtsSection =
+    isRodebjer && segment_type === "second-thoughts"
+      ? `
+--- SPECIAL: SECOND THOUGHTS ---
+Detta segment består av kunder som ofta returnerar sina köp. Målet med detta mail är INTE att sälja mer — det är att erbjuda ett annat sätt att relatera till varumärket. Skriv därför:
+
+1. Erkänn subtilt (utan skam) att val kan vara svåra
+2. Erbjud ett personligt stylingsamtal som alternativ till att köpa online
+3. Signalera att Rodebjer föredrar färre, mer medvetna köp (matchar deras sustainability-position)
+4. Ingen produkt ska nämnas specifikt — samtalet är inte om ett plagg utan om en relation
+5. CTA: "Boka ett stylingsamtal" istället för "Handla nu"
+
+EXEMPEL PÅ TON (skriv i denna anda men inte kopiera):
+"Kära Elsa,
+
+Ibland är det svåraste med kläder inte att köpa dem — utan att veta säkert att de är dina. Vi märker att du testat mycket senaste tiden, och att en del gått tillbaka.
+
+Vi tänkte att vi kunde göra det annorlunda. Boka en halvtimme med en av våra stylister — i butik eller online. Vi tittar tillsammans på vad som redan bor i din garderob och vad som skulle passa in där.
+
+Ingen kassa, inget måste. Bara ett samtal.
+
+Med varma hälsningar,
+Rodebjer"
+`
+      : "";
+
   const { data: customersData } = await supabase
     .from("customers")
-    .select("email, total_spent, order_count, last_order_at")
+    .select("email, total_spent, order_count, last_order_at, return_stats")
     .eq("brand_id", brandId);
 
   const customers = (customersData ?? []) as {
@@ -70,6 +111,7 @@ Rodebjer"
     total_spent: number | null;
     order_count: number | null;
     last_order_at: string | null;
+    return_stats: { return_rate: number; returns_count: number } | null;
   }[];
 
   const segmentCustomers = filterSegment(segment_type, customers);
@@ -103,7 +145,7 @@ INSTRUKTIONER:
 - Inga emojis, inga onödiga utropstecken
 - Avsluta med ett mjukt, konkret call-to-action
 - Signera med: "${repName ? repName + ", " + brandName : brandName}"
-${brandVoiceSection}
+${brandVoiceSection}${secondThoughtsSection}
 Svara ENBART med giltig JSON i detta format (inga kommentarer, ingen förklaring):
 {"subject":"ämnesrad här","body":"brödtext här\\nmed \\\\n för radbrytningar"}`;
 
