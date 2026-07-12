@@ -17,7 +17,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   ] = await Promise.all([
     supabase
       .from("customers")
-      .select("id, email, first_name, last_name, phone, total_spent, order_count, notes, sales_rep_id, last_order_at, last_visit_at, total_visits, ai_prediction, ai_prediction_at")
+      .select("id, email, first_name, last_name, phone, total_spent, order_count, notes, sales_rep_id, last_order_at, last_visit_at, total_visits, ai_prediction, ai_prediction_at, return_stats")
       .eq("id", id)
       .eq("brand_id", brandId)
       .single(),
@@ -53,6 +53,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     notes: string | null; sales_rep_id: string | null;
     last_order_at: string | null; last_visit_at: string | null; total_visits: number | null;
     ai_prediction: Record<string, unknown> | null; ai_prediction_at: string | null;
+    return_stats: Record<string, unknown> | null;
   };
 
   const salesReps = (repsData ?? []) as { id: string; name: string; color: string; email: string | null }[];
@@ -69,5 +70,14 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
   const brandName = (brandData as { name: string } | null)?.name;
 
-  return <CustomerDetail customer={customer} salesReps={salesReps} orders={orders} sessions={sessions} aiPrediction={customer.ai_prediction} brandName={brandName} />;
+  return (
+    <CustomerDetail
+      customer={customer}
+      salesReps={salesReps}
+      orders={orders}
+      sessions={sessions}
+      aiPrediction={customer.ai_prediction}
+      brandName={brandName}
+    />
+  );
 }

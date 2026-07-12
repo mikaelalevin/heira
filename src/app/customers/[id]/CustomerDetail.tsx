@@ -4,6 +4,13 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getMoodGradient } from "@/lib/mood-gradients";
+import {
+  parseReturnStats,
+  RETURN_REASON_LABELS,
+  RETURN_TYPE_LABELS,
+  returnRateColor,
+  isSecondThoughtsRisk,
+} from "@/lib/returns";
 
 interface AiPrediction {
   product: string;
@@ -31,6 +38,7 @@ interface Customer {
   last_order_at: string | null;
   last_visit_at: string | null;
   total_visits: number | null;
+  return_stats: Record<string, unknown> | null;
 }
 
 interface Order {
@@ -256,6 +264,8 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
 
   const assignedRep = salesReps.find((r) => r.id === repId);
   const prob = Math.min(95, 30 + (customer.order_count ?? 0) * 8 + ((customer.total_spent ?? 0) > 10000 ? 20 : 0));
+  const returnStats = parseReturnStats(customer.return_stats);
+  const showReturnDetails = !!returnStats && returnStats.returns_count >= 3;
 
   function toggleReceipt(orderId: string) {
     setOpenReceipts((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
@@ -391,6 +401,32 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
               {displayName}
             </h1>
             <p style={{ color: inkMuted, fontSize: 14 }}>{customer.email}</p>
+            {returnStats && (
+              <div className="mt-2">
+                {isSecondThoughtsRisk(returnStats.return_rate) ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: "#6B4F5B", color: "#FAF5EB" }}
+                  >
+                    Second Thoughts · {Math.round(returnStats.return_rate * 100)}% returrate
+                  </span>
+                ) : (
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{ color: returnRateColor(returnStats.return_rate) }}
+                  >
+                    {Math.round(returnStats.return_rate * 100)}% returrate
+                  </span>
+                )}
+                {showReturnDetails && (
+                  <div className="text-[11.5px] mt-1" style={{ color: inkMuted }}>
+                    Vanligaste anledning: {RETURN_REASON_LABELS[returnStats.most_common_reason] ?? returnStats.most_common_reason}
+                    {" · "}
+                    Vanligaste typ: {RETURN_TYPE_LABELS[returnStats.most_returned_type] ?? returnStats.most_returned_type}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         {!editing && (
@@ -516,8 +552,42 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
             </div>
           </div>
 
+          {/* Returmönster — kontextuell info, dovare än övriga kort */}
+          {showReturnDetails && returnStats && (
+            <div
+              className="rounded-2xl px-6 py-5 flex flex-col gap-3"
+              style={{ background: warm, border: `1px solid ${border}`, order: editing ? 4 : 2 }}
+            >
+              <div className="text-[10.5px] uppercase tracking-[0.1em] font-semibold" style={{ color: inkMuted }}>
+                Returmönster
+              </div>
+              <div className="flex items-center gap-6">
+                <div>
+                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 19, color: returnRateColor(returnStats.return_rate) }}>
+                    {Math.round(returnStats.return_rate * 100)}%
+                  </div>
+                  <div className="text-[11px] mt-0.5" style={{ color: inkMuted }}>Returrate</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 19, color: ink }}>
+                    {returnStats.returns_count}
+                  </div>
+                  <div className="text-[11px] mt-0.5" style={{ color: inkMuted }}>Returer totalt</div>
+                </div>
+              </div>
+              <div className="text-[12.5px]" style={{ color: inkMuted }}>
+                Vanligast: {RETURN_TYPE_LABELS[returnStats.most_returned_type] ?? returnStats.most_returned_type}
+                {" — anledning: "}
+                {RETURN_REASON_LABELS[returnStats.most_common_reason] ?? returnStats.most_common_reason}
+              </div>
+              <div className="text-[11.5px]" style={{ color: inkMuted }}>
+                Senaste retur: {formatDate(returnStats.last_return_at)}
+              </div>
+            </div>
+          )}
+
           {/* Åtgärder */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${border}`, order: editing ? 4 : 2 }}>
+          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${border}`, order: editing ? 5 : 3 }}>
             <div className="px-6 py-4 flex items-center gap-2.5" style={{ background: warm }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth="1.8">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -602,7 +672,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
           </div>
 
           {/* Contact info + form — lyfts upp vid redigering */}
-          <div className="flex flex-col gap-5" style={{ order: editing ? 0 : 3 }}>
+          <div className="flex flex-col gap-5" style={{ order: editing ? 0 : 4 }}>
           {editing && (
             <div className="flex gap-3">
               <button type="button" onClick={handleCancel}
