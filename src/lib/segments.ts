@@ -4,7 +4,8 @@ export type SegmentType =
   | "vanner-familj"
   | "nya"
   | "inaktiva"
-  | "pa-vag-bort";
+  | "pa-vag-bort"
+  | "second-thoughts";
 
 export const SEGMENT_META: Record<
   SegmentType,
@@ -46,6 +47,24 @@ export const SEGMENT_META: Record<
     gradient: "linear-gradient(135deg, #7D2027 0%, #4A1218 100%)",
     tag: "Churn-risk",
   },
+  "second-thoughts": {
+    name: "Second Thoughts",
+    description: "Kunder som ofta returnerar. Erbjud personlig styling istället för fler köp.",
+    gradient: "linear-gradient(135deg, #6B4F5B 0%, #3D2C35 100%)",
+    tag: "Ofta returer",
+  },
+};
+
+export const RODEBJER_SEGMENT_IMAGES: Record<SegmentType, string> = {
+  vip: "/rodebjer/segments/darlings.jpg",
+  stammisar: "/rodebjer/segments/stammisar.jpg",
+  "vanner-familj": "/rodebjer/segments/vanner-familj.jpg",
+  nya: "/rodebjer/segments/nya-kunder.jpg",
+  inaktiva: "/rodebjer/segments/inaktiva-kunder.jpg",
+  "pa-vag-bort": "/rodebjer/segments/pa-vag-bort.jpg",
+  // Ingen dedikerad bild vald ännu — svart läderjacka + röd scarf matchar tonen
+  // (dramatiskt utan att vara aggressivt).
+  "second-thoughts": "/rodebjer/segments/pa-vag-bort.jpg",
 };
 
 export interface CustomerForSegment {
@@ -53,6 +72,7 @@ export interface CustomerForSegment {
   total_spent: number | null;
   order_count: number | null;
   last_order_at: string | null;
+  return_stats?: { return_rate: number; returns_count: number } | null;
 }
 
 export interface SegmentStats {
@@ -106,6 +126,10 @@ export function filterSegment(
       );
     case "vanner-familj":
       return customers.filter((c) => c.email.endsWith("@icloud.com"));
+    case "second-thoughts":
+      return customers.filter(
+        (c) => !!c.return_stats && c.return_stats.return_rate >= 0.45 && c.return_stats.returns_count >= 2
+      );
   }
 }
 

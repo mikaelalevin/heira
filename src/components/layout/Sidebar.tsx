@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { SEGMENT_META } from "@/lib/segments";
+
+const SEGMENT_COUNT = Object.keys(SEGMENT_META).length;
 
 interface SalesRep { id: string; name: string; color: string; }
 interface NavItem { href: string; label: string; icon: React.ReactNode; badge?: string | number; }
@@ -75,7 +78,7 @@ export function Sidebar({ brandName = "Ditt varumärke", userInitials = "?", use
     { href: "/dashboard", label: "Översikt", icon: <DashboardIcon /> },
     { href: "/ai-recommendations", label: "AI-prediktioner", icon: <AiIcon /> },
     { href: "/customers", label: "Alla kunder", icon: <CustomersIcon /> },
-    { href: "/segments", label: "Segment", icon: <SegmentsIcon />, badge: 6 },
+    { href: "/segments", label: "Segment", icon: <SegmentsIcon />, badge: SEGMENT_COUNT },
     { href: "/campaigns", label: "Kampanjer", icon: <CampaignsIcon /> },
   ];
   const insightsNav: NavItem[] = [

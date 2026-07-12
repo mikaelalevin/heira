@@ -4,6 +4,7 @@ import { getBrandId } from "@/lib/brand";
 import {
   filterSegment,
   SEGMENT_META,
+  RODEBJER_SEGMENT_IMAGES,
   type SegmentType,
   type CustomerForSegment,
 } from "@/lib/segments";
@@ -27,6 +28,7 @@ const SEGMENT_AI_SUGGESTION: Record<SegmentType, string> = {
   nya: "Skicka ett välkomstmail inom 48 timmar med produktrekommendationer baserade på första köpet. Chansen för ett andra köp minskar med 40% efter 14 dagar utan kontakt.",
   inaktiva: "Reaktivering med en stark anledning att återvända — ny kollektion eller limiterat erbjudande — ökar konverteringschansen 2× jämfört med generella rabatter. Timing: de närmaste 30 dagarna.",
   "pa-vag-bort": "Kritiskt fönster: dessa kunder är fortfarande nåbara men håller på att glömma varumärket. En 'vi saknar dig'-kampanj bör skickas inom 7 dagar för bäst effekt.",
+  "second-thoughts": "Fler kampanjer ökar inte köp här — de ökar returer. Erbjud ett personligt stylingsamtal istället för fler produktrekommendationer. Målet är färre, mer medvetna köp.",
 };
 
 interface AIPrediction {
@@ -60,11 +62,19 @@ export default async function SegmentDetailPage({
   const supabase = await createClient();
   const brandId = await getBrandId();
 
-  const { data: customersData } = await supabase
-    .from("customers")
-    .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, ai_prediction")
-    .eq("brand_id", brandId)
-    .order("total_spent", { ascending: false });
+  const [{ data: brandData }, { data: customersData }] = await Promise.all([
+    supabase.from("brands").select("slug").eq("id", brandId).single(),
+    supabase
+      .from("customers")
+      .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, ai_prediction, return_stats")
+      .eq("brand_id", brandId)
+      .order("total_spent", { ascending: false }),
+  ]);
+
+  const brand = brandData as { slug: string } | null;
+  const isRodebjer =
+    brand?.slug === "rodebjer" || process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
+  const heroImage = isRodebjer ? RODEBJER_SEGMENT_IMAGES[segmentType] : null;
 
   const allCustomers = (customersData ?? []) as CustomerRow[];
   const segmentCustomers = filterSegment(segmentType, allCustomers) as CustomerRow[];
@@ -98,16 +108,32 @@ export default async function SegmentDetailPage({
       </div>
 
       {/* Hero */}
-      <div className="rounded-2xl overflow-hidden mb-6" style={{ background: meta.gradient }}>
-        <div className="relative" style={{ padding: "32px 32px 28px" }}>
-          <div
-            className="absolute inset-0"
-            style={{
-              opacity: 0.1,
-              backgroundImage: "radial-gradient(circle at 20% 50%, white 0.5px, transparent 1px)",
-              backgroundSize: "28px 28px",
-            }}
-          />
+      <div
+        className="rounded-2xl overflow-hidden mb-6"
+        style={{
+          background: heroImage
+            ? `linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55) 100%), url('${heroImage}') center 15% / cover`
+            : meta.gradient,
+        }}
+      >
+        <div
+          className="relative"
+          style={
+            heroImage
+              ? { height: 360, padding: "32px 32px 28px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }
+              : { padding: "32px 32px 28px" }
+          }
+        >
+          {!heroImage && (
+            <div
+              className="absolute inset-0"
+              style={{
+                opacity: 0.1,
+                backgroundImage: "radial-gradient(circle at 20% 50%, white 0.5px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }}
+            />
+          )}
           <div className="relative">
             <span
               className="inline-block text-[10.5px] uppercase tracking-[0.1em] font-semibold px-2.5 py-1 rounded-lg mb-3"

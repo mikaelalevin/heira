@@ -1,21 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
-import { computeSegmentStats } from "@/lib/segments";
+import { computeSegmentStats, RODEBJER_SEGMENT_IMAGES } from "@/lib/segments";
 
 export default async function SegmentsPage() {
   const supabase = await createClient();
   const brandId = await getBrandId();
 
-  const { data: customersData } = await supabase
-    .from("customers")
-    .select("email, total_spent, order_count, last_order_at")
-    .eq("brand_id", brandId);
+  const [{ data: brandData }, { data: customersData }] = await Promise.all([
+    supabase.from("brands").select("slug").eq("id", brandId).single(),
+    supabase
+      .from("customers")
+      .select("email, total_spent, order_count, last_order_at, return_stats")
+      .eq("brand_id", brandId),
+  ]);
+
+  const brand = brandData as { slug: string } | null;
+  const isRodebjer =
+    brand?.slug === "rodebjer" || process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
 
   const customers = (customersData ?? []) as {
     email: string;
     total_spent: number | null;
     order_count: number | null;
     last_order_at: string | null;
+    return_stats: { return_rate: number; returns_count: number } | null;
   }[];
 
   const segments = computeSegmentStats(customers);
@@ -78,7 +86,10 @@ export default async function SegmentsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {segments.map((seg) => (
+        {segments.map((seg) => {
+          const heroImage = isRodebjer ? RODEBJER_SEGMENT_IMAGES[seg.type] : null;
+
+          return (
           <a
             key={seg.type}
             href={`/segments/${seg.type}`}
@@ -92,17 +103,22 @@ export default async function SegmentsPage() {
           >
             <div
               className="relative overflow-hidden"
-              style={{ height: 110, background: seg.gradient }}
+              style={{
+                height: heroImage ? 210 : 110,
+                background: heroImage ? `url('${heroImage}') center 20% / cover` : seg.gradient,
+              }}
             >
-              <div
-                className="absolute inset-0"
-                style={{
-                  opacity: 0.15,
-                  backgroundImage:
-                    "radial-gradient(circle at 30% 30%, white 0.5px, transparent 1px)",
-                  backgroundSize: "22px 22px",
-                }}
-              />
+              {!heroImage && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    opacity: 0.15,
+                    backgroundImage:
+                      "radial-gradient(circle at 30% 30%, white 0.5px, transparent 1px)",
+                    backgroundSize: "22px 22px",
+                  }}
+                />
+              )}
               <span
                 className="absolute text-[10.5px] uppercase tracking-[0.08em] font-semibold px-[9px] py-[4px] rounded-xl"
                 style={{
@@ -110,6 +126,7 @@ export default async function SegmentsPage() {
                   left: 16,
                   background: "rgba(255,255,255,0.92)",
                   color: ink,
+                  ...(heroImage ? { backdropFilter: "blur(8px)" } : {}),
                 }}
               >
                 {seg.tag}
@@ -208,7 +225,8 @@ export default async function SegmentsPage() {
               </div>
             </div>
           </a>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
