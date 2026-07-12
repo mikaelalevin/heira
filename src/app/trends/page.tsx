@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { AppShell } from "@/components/layout/AppShell";
 import { RevenueBarChart, WeekdayBarChart, TopItemsList } from "./TrendsCharts";
+import { deriveProductReturns } from "@/lib/productReturns";
 
 const ink = "#1A1614";
 const inkMuted = "#8A6E55";
@@ -88,6 +89,7 @@ export default async function TrendsPage() {
     .slice(0, 6)
     .map(([name, count]) => ({ name, count }));
   const maxItemCount = topItems[0]?.count ?? 1;
+  const mostReturnedProducts = deriveProductReturns(itemsMap).slice(0, 5);
 
   // KPIs
   const totalRevenue = customers.reduce((s, c) => s + (c.total_spent ?? 0), 0);
@@ -176,6 +178,38 @@ export default async function TrendsPage() {
             )}
           </div>
         </div>
+
+        {/* Mest returnerade produkter */}
+        {mostReturnedProducts.length > 0 && (
+          <div className="rounded-2xl p-6 mb-5" style={{ background: card, border: `1px solid ${border}` }}>
+            <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 18, color: ink, marginBottom: 4 }}>
+              Mest returnerade produkter
+            </div>
+            <div className="text-[13px] mb-5" style={{ color: inkMuted }}>
+              Uppskattad returrate per produkt, med vanligaste anledningarna
+            </div>
+            <div className="flex flex-col">
+              {mostReturnedProducts.map((p, i) => (
+                <div key={p.name} className="flex items-center gap-4 py-3.5" style={{ borderTop: i === 0 ? "none" : `1px solid ${border}` }}>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13.5px] font-medium truncate" style={{ color: ink }}>{p.name}</div>
+                    <div className="text-[12px] mt-1" style={{ color: inkMuted }}>
+                      {p.reasons.map((r) => `${r.label} (${r.count})`).join(" · ")}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, color: ink }}>
+                      {p.returnsCount} returer
+                    </div>
+                    <div className="text-[11.5px] mt-0.5" style={{ color: inkMuted }}>
+                      {Math.round(p.returnRate * 100)}% av {p.unitsSold} sålda
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* AI insight + customer health */}
         <div className="grid grid-cols-2 gap-5">
