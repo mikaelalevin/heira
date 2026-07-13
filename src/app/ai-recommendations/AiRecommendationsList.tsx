@@ -59,6 +59,7 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generatingAll, setGeneratingAll] = useState(false);
+  const [search, setSearch] = useState("");
 
   async function generateOne(customerId: string) {
     setGenerating((g) => ({ ...g, [customerId]: true }));
@@ -84,15 +85,26 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
 
   async function generateAll() {
     setGeneratingAll(true);
-    const missing = customers.filter((c) => !predictions[c.id]);
+    const missing = filteredCustomers.filter((c) => !predictions[c.id]);
     for (const c of missing) {
       await generateOne(c.id);
     }
     setGeneratingAll(false);
   }
 
-  const withPredictions = customers.filter((c) => predictions[c.id]);
-  const withoutPredictions = customers.filter((c) => !predictions[c.id]);
+  const q = search.toLowerCase().trim();
+  const filteredCustomers = q
+    ? customers.filter((c) =>
+        [c.first_name, c.last_name, c.email]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      )
+    : customers;
+
+  const withPredictions = filteredCustomers.filter((c) => predictions[c.id]);
+  const withoutPredictions = filteredCustomers.filter((c) => !predictions[c.id]);
 
   const sorted = [
     ...withPredictions.sort((a, b) => (predictions[a.id]?.daysUntil ?? 99) - (predictions[b.id]?.daysUntil ?? 99)),
@@ -132,6 +144,22 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
             )}
           </button>
         )}
+      </div>
+
+      <div className="relative w-full md:w-60 mb-5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={inkMuted} strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Sök namn, e-post..."
+          className="pl-9 pr-4 py-2 rounded-xl text-[13px] outline-none"
+          style={{ background: "#FFFFFF", border: `1px solid ${border}`, color: ink, fontFamily: "inherit", width: "100%" }}
+          onFocus={(e) => (e.target.style.borderColor = ink)}
+          onBlur={(e) => (e.target.style.borderColor = border)}
+        />
       </div>
 
       {aiCount > 0 && (
@@ -230,9 +258,11 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
           );
         })}
 
-        {customers.length === 0 && (
+        {sorted.length === 0 && (
           <div className="px-6 py-12 text-center" style={{ background: "#FFFFFF" }}>
-            <p className="text-[14px]" style={{ color: inkMuted }}>Inga kunder att analysera ännu.</p>
+            <p className="text-[14px]" style={{ color: inkMuted }}>
+              {q ? "Inga kunder matchar sökningen." : "Inga kunder att analysera ännu."}
+            </p>
           </div>
         )}
       </div>
