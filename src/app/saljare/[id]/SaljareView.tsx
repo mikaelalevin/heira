@@ -64,6 +64,7 @@ export function SaljareView({
   const [assigned, setAssigned] = useState<Customer[]>(initialAssigned);
   const [panelOpen, setPanelOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [assignedSearch, setAssignedSearch] = useState("");
   const [assigning, setAssigning] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -86,6 +87,13 @@ export function SaljareView({
       c.email.toLowerCase().includes(q)
     );
   });
+
+  const assignedQ = assignedSearch.toLowerCase().trim();
+  const filteredAssigned = assignedQ
+    ? assigned.filter((c) =>
+        getFullName(c).toLowerCase().includes(assignedQ) || c.email.toLowerCase().includes(assignedQ)
+      )
+    : assigned;
 
   const repInitials = currentRep.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const totalLTV = assigned.reduce((sum, c) => sum + (c.total_spent ?? 0), 0);
@@ -295,6 +303,22 @@ export function SaljareView({
           </button>
         </div>
       ) : (
+        <>
+        <div className="relative w-full md:w-60 mb-4">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={inkMuted} strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            value={assignedSearch}
+            onChange={(e) => setAssignedSearch(e.target.value)}
+            placeholder="Sök namn, e-post..."
+            className="pl-9 pr-4 py-2 rounded-xl text-[13px] outline-none"
+            style={{ background: "#FFFFFF", border: `1px solid ${border}`, color: ink, fontFamily: "inherit", width: "100%" }}
+            onFocus={(e) => (e.target.style.borderColor = ink)}
+            onBlur={(e) => (e.target.style.borderColor = border)}
+          />
+        </div>
         <div className="rounded-2xl overflow-hidden" style={{ background: "#FFFFFF", border: `1px solid ${border}` }}>
           <div className="overflow-x-auto">
           <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
@@ -308,7 +332,14 @@ export function SaljareView({
               </tr>
             </thead>
             <tbody>
-              {assigned.map((c) => {
+              {filteredAssigned.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 13.5 }}>
+                    Inga kunder matchar sökningen.
+                  </td>
+                </tr>
+              )}
+              {filteredAssigned.map((c) => {
                 const prob = getProbability(c);
                 return (
                   <tr key={c.id}>
@@ -361,6 +392,7 @@ export function SaljareView({
           </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Add customers slide-over panel */}
