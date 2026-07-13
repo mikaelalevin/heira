@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { SegmentStats } from "@/lib/segments";
+import { RODEBJER_STORE_FOOTER, getSignoffName } from "@/lib/messageSignature";
 
 interface SalesRep {
   id: string;
@@ -787,9 +788,11 @@ export function CampaignBuilder({ brandName, segments, salesReps, initialSegment
             )}
             <div
               className="mt-6 pt-4 text-[11px] text-center"
-              style={{ borderTop: `1px solid ${border}`, color: inkMuted }}
+              style={{ borderTop: `1px solid ${border}`, color: inkMuted, whiteSpace: "pre-line" }}
             >
-              {process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer" ? "With love, Rodebjer" : "Skickat med HEIRA"}
+              {process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer"
+                ? [getSignoffName(selectedRep?.name ?? null), RODEBJER_STORE_FOOTER].filter(Boolean).join("\n\n")
+                : "Skickat med HEIRA"}
             </div>
           </div>
         </div>

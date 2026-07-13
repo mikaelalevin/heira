@@ -40,10 +40,7 @@ REGLER:
 4. Inga utropstecken, aldrig
 5. Inga hype-ord: amazing, incredible, must-have, trendy, VIP, exclusive, deal, save, discount, shop now, limited time
 6. Korta stycken, editorial mellanrum
-7. Avsluta med signatur:
-   - Svenska: "Med varma hälsningar,\\nRodebjer" eller bara "x,\\nRodebjer"
-   - Engelska: "With love,\\nRodebjer" eller "x,\\nRodebjer"
-8. Aldrig från en specifik säljare/person — Rodebjer talar som ett enat brand
+7. Skriv INGEN avslutande hälsningsfras eller signatur — brödtexten ska sluta med sista innehållsmeningen. Signatur och kontaktuppgifter läggs till automatiskt efteråt.
 
 --- VISUAL WORLD (FW26 lookbook) ---
 Rodebjers FW26 utspelar sig i Stockholms offentliga rum: granit-fasader, tunnelbanor, kullersten, träd i park. Modellen är eftertänksam, individuell, aldrig glamorös. Kläderna definieras av taktilitet: fluffig mohair, ribbstickat, jacquard-blommor, läder, silke, korrduroj, plaid. Färgpaletten är dov men rik: mossgrön, dov rosa, indigo, cognac, plommon, tegel, off-white.
@@ -68,10 +65,7 @@ EXEMPEL PÅ EN RODEBJER-MEJL TILL EN KUND:
 
 The Karlai återkommer för hösten — den här gången i Opulent Rose, med långa ärmar och tumhål för de lagrade dagarna som väntar. Bomullsjersey, gjord i Portugal.
 
-Vi tänkte den kunde bli en av dina.
-
-Med varma hälsningar,
-Rodebjer"
+Vi tänkte den kunde bli en av dina."
 `
     : "";
 
@@ -94,10 +88,7 @@ Ibland är det svåraste med kläder inte att köpa dem — utan att veta säker
 
 Vi tänkte att vi kunde göra det annorlunda. Boka en halvtimme med en av våra stylister — i butik eller online. Vi tittar tillsammans på vad som redan bor i din garderob och vad som skulle passa in där.
 
-Ingen kassa, inget måste. Bara ett samtal.
-
-Med varma hälsningar,
-Rodebjer"
+Ingen kassa, inget måste. Bara ett samtal."
 `
       : "";
 
@@ -144,7 +135,11 @@ INSTRUKTIONER:
 - Ingen rabatt eller prisinfo om det inte handlar om win-back (inaktiva/på väg bort)
 - Inga emojis, inga onödiga utropstecken
 - Avsluta med ett mjukt, konkret call-to-action
-- Signera med: "${repName ? repName + ", " + brandName : brandName}"
+${
+  isRodebjer
+    ? `- Skriv ingen signatur eller avslutningsfras (se regel ovan) — den läggs till automatiskt`
+    : `- Signera med: "${repName ? repName + ", " + brandName : brandName}"`
+}
 ${brandVoiceSection}${secondThoughtsSection}
 Svara ENBART med giltig JSON i detta format (inga kommentarer, ingen förklaring):
 {"subject":"ämnesrad här","body":"brödtext här\\nmed \\\\n för radbrytningar"}`;

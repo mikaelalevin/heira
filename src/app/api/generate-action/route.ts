@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { parseReturnStats } from "@/lib/returns";
+import { RODEBJER_STORE_FOOTER, getSignoffName } from "@/lib/messageSignature";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic();
@@ -51,10 +52,7 @@ REGLER:
 4. Inga utropstecken, aldrig
 5. Inga hype-ord: amazing, incredible, must-have, trendy, VIP, exclusive, deal, save, discount, shop now, limited time
 6. Korta stycken, editorial mellanrum
-7. Avsluta med signatur:
-   - Svenska: "Med varma hälsningar,\\nRodebjer" eller bara "x,\\nRodebjer"
-   - Engelska: "With love,\\nRodebjer" eller "x,\\nRodebjer"
-8. Aldrig från en specifik säljare/person — Rodebjer talar som ett enat brand
+7. Skriv INGEN avslutande hälsningsfras eller signatur — meddelandet ska sluta med sista innehållsmeningen. Signatur och kontaktuppgifter läggs till automatiskt efteråt.
 
 --- VISUAL WORLD (FW26 lookbook) ---
 Rodebjers FW26 utspelar sig i Stockholms offentliga rum: granit-fasader, tunnelbanor, kullersten, träd i park. Modellen är eftertänksam, individuell, aldrig glamorös. Kläderna definieras av taktilitet: fluffig mohair, ribbstickat, jacquard-blommor, läder, silke, korrduroj, plaid. Färgpaletten är dov men rik: mossgrön, dov rosa, indigo, cognac, plommon, tegel, off-white.
@@ -79,10 +77,7 @@ EXEMPEL PÅ EN RODEBJER-MEJL TILL EN KUND:
 
 The Karlai återkommer för hösten — den här gången i Opulent Rose, med långa ärmar och tumhål för de lagrade dagarna som väntar. Bomullsjersey, gjord i Portugal.
 
-Vi tänkte den kunde bli en av dina.
-
-Med varma hälsningar,
-Rodebjer"
+Vi tänkte den kunde bli en av dina."
 `
     : "";
 
@@ -196,7 +191,7 @@ ${
 - Avsluta med ett konkret nästa steg: ${secondThoughtsMode ? "boka ett stylingsamtal" : "boka tid, kom in, ta en titt"}
 ${
   isRodebjer
-    ? `- Signera enligt BRAND VOICE-signaturen ovan — aldrig med säljarens namn`
+    ? `- Skriv ingen signatur eller avslutningsfras (se regel ovan) — den läggs till automatiskt`
     : `- Signera med säljarens namn: "${rep_name ?? "teamet på " + brand.name}"${rep_email ? ` och e-post: ${rep_email}` : ""}`
 }
 - Inga emojis, inga utropstecken i onödan
@@ -211,8 +206,13 @@ Svara ENBART med meddelandet, ingen förklaring, ingen rubrik.`;
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text = message.content[0].type === "text" ? message.content[0].text.trim() : "";
+    let text = message.content[0].type === "text" ? message.content[0].text.trim() : "";
     if (!text) throw new Error("Tomt svar från AI");
+
+    if (isRodebjer) {
+      const signoffName = getSignoffName(rep_name);
+      text = [text, signoffName, RODEBJER_STORE_FOOTER].filter(Boolean).join("\n\n");
+    }
 
     return Response.json({ message: text });
   } catch (err) {

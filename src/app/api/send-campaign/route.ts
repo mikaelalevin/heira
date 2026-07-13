@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { filterSegment, type SegmentType } from "@/lib/segments";
+import { RODEBJER_STORE_FOOTER, getSignoffName } from "@/lib/messageSignature";
 import { Resend } from "resend";
 
 export async function POST(request: Request) {
@@ -37,14 +38,16 @@ export async function POST(request: Request) {
   const brandId = await getBrandId();
 
   const [{ data: brandData }, { data: customersData }] = await Promise.all([
-    supabase.from("brands").select("name").eq("id", brandId).single(),
+    supabase.from("brands").select("name, slug").eq("id", brandId).single(),
     supabase
       .from("customers")
       .select("email, total_spent, order_count, last_order_at, return_stats")
       .eq("brand_id", brandId),
   ]);
 
-  const brandName = (brandData as { name: string } | null)?.name ?? "HEIRA";
+  const brand = brandData as { name: string; slug: string } | null;
+  const brandName = brand?.name ?? "HEIRA";
+  const isRodebjer = brand?.slug === "rodebjer" || process.env.NEXT_PUBLIC_BRAND_MODE === "rodebjer";
   const customers = (customersData ?? []) as {
     email: string;
     total_spent: number | null;
@@ -75,6 +78,11 @@ export async function POST(request: Request) {
     )
     .join("");
 
+  const signoffName = getSignoffName(rep_name);
+  const footerHtml = isRodebjer
+    ? `${signoffName ? `<div style="margin-bottom:8px">${signoffName}</div>` : ""}${RODEBJER_STORE_FOOTER.split("\n").join("<br>")}<br><br>Skickat med HEIRA · <a href="#" style="color:#8A6E55">Avprenumerera</a>`
+    : `Skickat med HEIRA · <a href="#" style="color:#8A6E55">Avprenumerera</a>`;
+
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -83,7 +91,7 @@ export async function POST(request: Request) {
     <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8A6E55;margin-bottom:40px">${brandName}</div>
     <div style="font-size:15px;line-height:1.7;color:#1A1614">${htmlBody}</div>
     <div style="margin-top:48px;padding-top:24px;border-top:1px solid #DDD0B5;font-size:11px;color:#8A6E55;letter-spacing:0.06em">
-      Skickat med HEIRA · <a href="#" style="color:#8A6E55">Avprenumerera</a>
+      ${footerHtml}
     </div>
   </div>
 </body>
