@@ -247,6 +247,9 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [messageError, setMessageError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [confirmingSend, setConfirmingSend] = useState(false);
 
   const [firstName, setFirstName] = useState(customer.first_name ?? "");
   const [lastName, setLastName] = useState(customer.last_name ?? "");
@@ -376,6 +379,16 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
     await navigator.clipboard.writeText(generatedMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function sendMessage() {
+    setConfirmingSend(false);
+    setSending(true);
+    setTimeout(() => {
+      setSending(false);
+      setSent(true);
+      setTimeout(() => setSent(false), 2500);
+    }, 600);
   }
 
   const pred = aiPrediction;
@@ -615,11 +628,55 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                     onFocus={(e) => (e.target.style.borderColor = ink)}
                     onBlur={(e) => (e.target.style.borderColor = border)}
                   />
+                  {confirmingSend && (
+                    <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl" style={{ background: warm }}>
+                      <span className="text-[12px] flex-1" style={{ color: ink }}>
+                        Skicka till {displayName}?
+                      </span>
+                      <button
+                        onClick={() => setConfirmingSend(false)}
+                        className="text-[12px] font-medium px-3 py-1.5 rounded-lg"
+                        style={{ background: "transparent", color: inkMuted, border: `1px solid ${border}`, cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        Avbryt
+                      </button>
+                      <button
+                        onClick={sendMessage}
+                        className="text-[12px] font-medium px-3 py-1.5 rounded-lg"
+                        style={{ background: ink, color: bg, border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        Ja, skicka
+                      </button>
+                    </div>
+                  )}
                   <div className="flex gap-2.5">
                     <button
-                      onClick={copyMessage}
+                      onClick={() => setConfirmingSend(true)}
+                      disabled={sending || sent || confirmingSend}
                       className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg flex-1 justify-center"
-                      style={{ background: copied ? "#DDE7D7" : ink, color: copied ? "#3E4F36" : bg, border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                      style={{ background: sent ? "#DDE7D7" : ink, color: sent ? "#3E4F36" : bg, border: "none", cursor: sending ? "wait" : "pointer", fontFamily: "inherit", opacity: confirmingSend ? 0.5 : 1 }}
+                    >
+                      {sent ? (
+                        <>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                          Skickat!
+                        </>
+                      ) : sending ? (
+                        <>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                          Skickar...
+                        </>
+                      ) : (
+                        <>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                          Skicka
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={copyMessage}
+                      className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg"
+                      style={{ background: "transparent", color: copied ? "#3E6B2F" : inkMuted, border: `1px solid ${border}`, cursor: "pointer", fontFamily: "inherit" }}
                     >
                       {copied ? (
                         <>
@@ -694,9 +751,22 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
           )}
 
           <form ref={formRef} onSubmit={handleSave} className="flex flex-col gap-5">
-            <div className="rounded-2xl p-6 flex flex-col gap-5" style={{ background: "#FFFFFF", border: `1px solid ${border}` }}>
-              <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, fontWeight: 500, color: ink }}>
-                Kontaktuppgifter
+            <div className="rounded-2xl p-6 flex flex-col gap-5" style={{ background: "#FFFFFF", border: `1px solid ${border}`, order: 0 }}>
+              <div className="flex items-center justify-between">
+                <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, fontWeight: 500, color: ink }}>
+                  Kontaktuppgifter
+                </div>
+                {!editing && (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium"
+                    style={{ background: "transparent", color: ink, border: `1px solid ${border}`, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Redigera
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -760,7 +830,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
               )}
             </div>
 
-            <div className="rounded-2xl p-6 flex flex-col gap-5" style={{ background: "#FFFFFF", border: `1px solid ${border}` }}>
+            <div className="rounded-2xl p-6 flex flex-col gap-5" style={{ background: "#FFFFFF", border: `1px solid ${border}`, order: editing ? 2 : 1 }}>
               <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, fontWeight: 500, color: ink }}>Köphistorik</div>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Total köp (kr)">
@@ -778,7 +848,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
               </div>
             </div>
 
-            <div className="rounded-2xl p-6 flex flex-col gap-3" style={{ background: "#FFFFFF", border: `1px solid ${border}` }}>
+            <div className="rounded-2xl p-6 flex flex-col gap-3" style={{ background: "#FFFFFF", border: `1px solid ${border}`, order: editing ? 1 : 2 }}>
               <Field label="Anteckningar">
                 <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={editing ? "Handlar ofta storlek S, gillar linne..." : "–"} rows={3} disabled={!editing}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
