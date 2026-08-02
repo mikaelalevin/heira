@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
-import { parseReturnStats } from "@/lib/returns";
+import { parseReturnStats, RETURN_TYPE_LABELS } from "@/lib/returns";
 import { RODEBJER_STORE_FOOTER, getSignoffName } from "@/lib/messageSignature";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     customer_id?: string;
     prediction?: {
       product: string;
+      product_type?: string | null;
       date: string;
       daysUntil: number;
       confidence: number;
@@ -53,6 +54,7 @@ REGLER:
 5. Inga hype-ord: amazing, incredible, must-have, trendy, VIP, exclusive, deal, save, discount, shop now, limited time
 6. Korta stycken, editorial mellanrum
 7. Skriv INGEN avslutande hälsningsfras eller signatur — meddelandet ska sluta med sista innehållsmeningen. Signatur och kontaktuppgifter läggs till automatiskt efteråt.
+8. Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.
 
 --- VISUAL WORLD (FW26 lookbook) ---
 Rodebjers FW26 utspelar sig i Stockholms offentliga rum: granit-fasader, tunnelbanor, kullersten, träd i park. Modellen är eftertänksam, individuell, aldrig glamorös. Kläderna definieras av taktilitet: fluffig mohair, ribbstickat, jacquard-blommor, läder, silke, korrduroj, plaid. Färgpaletten är dov men rik: mossgrön, dov rosa, indigo, cognac, plommon, tegel, off-white.
@@ -135,6 +137,7 @@ Vi tänkte den kunde bli en av dina."
     : null;
 
   const predProduct = prediction?.product ?? "ett nytt plagg";
+  const predType = prediction?.product_type ? RETURN_TYPE_LABELS[prediction.product_type] ?? null : null;
   const predDate = prediction?.date ?? "inom kort";
   const predDays = prediction?.daysUntil ?? 14;
   const predReason = prediction?.reason ?? "";
@@ -175,7 +178,7 @@ RETURMÖNSTER:
 - Antal returer: ${returnsCount}`
     : `
 AI-PREDIKTION:
-- Kunden förväntas köpa: ${predProduct}
+- Kunden förväntas köpa: ${predProduct}${predType ? ` (${predType})` : ""}
 - Inom: ${predDays} dagar (ca ${predDate})
 ${predReason ? `- Anledning: ${predReason}` : ""}`
 }
@@ -187,6 +190,7 @@ ${
     ? "- Nämn INGEN specifik produkt — samtalet handlar om relationen, inte ett plagg"
     : "- Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat"
 }
+- Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.
 - Max 4 meningar — kortare är bättre
 - Avsluta med ett konkret nästa steg: ${secondThoughtsMode ? "boka ett stylingsamtal" : "boka tid, kom in, ta en titt"}
 ${

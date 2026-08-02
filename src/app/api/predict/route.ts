@@ -133,6 +133,7 @@ Svara ENBART med ett JSON-objekt, ingen annan text:
 {
   "sku": "<exakt SKU från katalogen ovan>",
   "name": "<exakt produktnamn från katalogen ovan>",
+  "product_type": "<exakt typ från katalogen: dress, top, hat, scarf, bag, etc.>",
   "daysUntil": <heltal 1-90>,
   "confidence": <heltal 40-96>,
   "reason": "<1 mening på svenska som refererar till kundens tidigare köp>"
@@ -152,6 +153,7 @@ Svara ENBART med ett JSON-objekt, ingen annan text:
     const raw = JSON.parse(jsonMatch[0]) as {
       sku?: unknown;
       name?: unknown;
+      product_type?: unknown;
       daysUntil?: unknown;
       confidence?: unknown;
       reason?: unknown;
@@ -176,6 +178,7 @@ Svara ENBART med ett JSON-objekt, ingen annan text:
     const prediction = {
       product: matchedProduct.name,
       predicted_product_sku: matchedProduct.sku,
+      product_type: matchedProduct.product_type ?? (typeof raw.product_type === "string" ? raw.product_type : null),
       category: matchedProduct.category,
       price_sek: matchedProduct.price_sek,
       mood_gradient: matchedProduct.mood_gradient,
