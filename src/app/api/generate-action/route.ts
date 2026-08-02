@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
-import { parseReturnStats, RETURN_TYPE_LABELS } from "@/lib/returns";
+import { RETURN_TYPE_LABELS } from "@/lib/returns";
 import { RODEBJER_STORE_FOOTER, getSignoffName } from "@/lib/messageSignature";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -86,7 +86,7 @@ Vi tänkte den kunde bli en av dina."
   const [{ data: customerData }, { data: ordersData }] = await Promise.all([
     supabase
       .from("customers")
-      .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, notes, return_stats")
+      .select("id, email, first_name, last_name, total_spent, order_count, last_order_at, notes")
       .eq("id", customer_id)
       .eq("brand_id", brand.id)
       .single(),
@@ -108,12 +108,9 @@ Vi tänkte den kunde bli en av dina."
     order_count: number | null;
     last_order_at: string | null;
     notes: string | null;
-    return_stats: Record<string, unknown> | null;
   };
 
   const orders = (ordersData ?? []) as { total: number; created_at: string; items: unknown[] }[];
-  const returnStats = parseReturnStats(customer.return_stats);
-  const secondThoughtsMode = isRodebjer && !!returnStats && returnStats.return_rate >= 0.45;
 
   const firstName = customer.first_name ?? customer.email.split("@")[0];
   const fullName = [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.email;
@@ -141,27 +138,10 @@ Vi tänkte den kunde bli en av dina."
   const predDate = prediction?.date ?? "inom kort";
   const predDays = prediction?.daysUntil ?? 14;
   const predReason = prediction?.reason ?? "";
-  const returnRatePct = returnStats ? Math.round(returnStats.return_rate * 100) : 0;
-  const returnsCount = returnStats?.returns_count ?? 0;
-
-  const secondThoughtsSection = secondThoughtsMode
-    ? `
---- SPECIAL: SECOND THOUGHTS (denna kund) ---
-Kunden returnerar ofta sina köp (${returnRatePct}% returrate, ${returnsCount} returer). Målet med detta meddelande är INTE att sälja mer — det är att erbjuda personlig vägledning istället för fler köp.
-1. Erkänn subtilt (utan skam) att val kan vara svåra
-2. Erbjud ett personligt stylingsamtal som alternativ till att köpa online
-3. Ingen produkt ska nämnas specifikt — samtalet är inte om ett plagg utan om en relation
-4. CTA: "Boka ett stylingsamtal" — inte en produktrekommendation
-`
-    : "";
 
   const prompt = `Du är säljarens assistent på ${brand.name}, ett mode/beauty-varumärke med sofistikerat och personligt tonläge.
 
-UPPGIFT: ${
-    secondThoughtsMode
-      ? "Skriv ett kort, personligt meddelande som föreslår ett stylingsamtal — INTE en produktrekommendation. Kunden har en hög returrate, så målet är personlig vägledning snarare än fler köp."
-      : "Skriv ett kort, personligt utgående meddelande som säljaren ska skicka direkt till kunden. Det ska kännas som att en verklig person skriver — inte ett nyhetsbrev, inte en säljpitch."
-  }
+UPPGIFT: Skriv ett kort, personligt utgående meddelande som säljaren ska skicka direkt till kunden. Det ska kännas som att en verklig person skriver — inte ett nyhetsbrev, inte en säljpitch.
 
 KUNDINFO:
 - Namn: ${fullName} (tilltala som "${firstName}")
@@ -170,29 +150,18 @@ KUNDINFO:
 ${daysSinceLast !== null ? `- Dagar sedan senaste köp: ${daysSinceLast}` : ""}
 ${lastItemsText ? `- Senast köpta: ${lastItemsText}` : ""}
 ${customer.notes ? `- Säljarens anteckning: ${customer.notes}` : ""}
-${
-  secondThoughtsMode
-    ? `
-RETURMÖNSTER:
-- Returrate: ${returnRatePct}%
-- Antal returer: ${returnsCount}`
-    : `
+
 AI-PREDIKTION:
 - Kunden förväntas köpa: ${predProduct}${predType ? ` (${predType})` : ""}
 - Inom: ${predDays} dagar (ca ${predDate})
-${predReason ? `- Anledning: ${predReason}` : ""}`
-}
-${brandVoiceSection}${secondThoughtsSection}
+${predReason ? `- Anledning: ${predReason}` : ""}
+${brandVoiceSection}
 INSTRUKTIONER:
 - Skriv på svenska, varmt och personligt
-${
-  secondThoughtsMode
-    ? "- Nämn INGEN specifik produkt — samtalet handlar om relationen, inte ett plagg"
-    : "- Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat"
-}
+- Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat
 - Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.
 - Max 4 meningar — kortare är bättre
-- Avsluta med ett konkret nästa steg: ${secondThoughtsMode ? "boka ett stylingsamtal" : "boka tid, kom in, ta en titt"}
+- Avsluta med ett konkret nästa steg: boka tid, kom in, ta en titt
 ${
   isRodebjer
     ? `- Skriv ingen signatur eller avslutningsfras (se regel ovan) — den läggs till automatiskt`
