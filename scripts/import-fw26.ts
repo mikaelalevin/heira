@@ -14,6 +14,7 @@ const TYPE_TO_MOOD: Record<string, string> = {
   suit: "ink",
   denim: "night",
   scarf: "gold",
+  hat: "gold",       // ny — matchar scarf-tonen (varm accessoar)
   bag: "plum",
   belt: "dust",
 };

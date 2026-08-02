@@ -26,6 +26,13 @@ export const RETURN_TYPE_LABELS: Record<string, string> = {
   top: "Topp",
   jacket: "Jacka",
   denim: "Denim",
+  scarf: "Scarf",
+  hat: "Mössa",
+  bag: "Väska",
+  belt: "Bälte",
+  blazer: "Kavaj",
+  suit: "Kostym",
+  body: "Body",
 };
 
 // < 15%: neutral · 15–35%: normal · 35–50%: dov varning · 50%+: "Second Thoughts"-nivå
