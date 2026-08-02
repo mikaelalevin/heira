@@ -431,13 +431,6 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                     {Math.round(returnStats.return_rate * 100)}% returrate
                   </span>
                 )}
-                {showReturnDetails && (
-                  <div className="text-[11.5px] mt-1" style={{ color: inkMuted }}>
-                    Vanligaste anledning: {RETURN_REASON_LABELS[returnStats.most_common_reason] ?? returnStats.most_common_reason}
-                    {" · "}
-                    Vanligaste typ: {RETURN_TYPE_LABELS[returnStats.most_returned_type] ?? returnStats.most_returned_type}
-                  </div>
-                )}
               </div>
             )}
           </div>
