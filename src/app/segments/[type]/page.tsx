@@ -282,8 +282,8 @@ export default async function SegmentDetailPage({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-5 flex-shrink-0">
-                  <div className="text-right hidden md:block">
+                <div className="flex items-start gap-5 flex-shrink-0">
+                  <div className="text-right hidden md:block flex-shrink-0" style={{ width: 46 }}>
                     <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: inkMuted }}>
                       Ordrar
                     </div>
@@ -292,7 +292,7 @@ export default async function SegmentDetailPage({
                     </div>
                   </div>
 
-                  <div className="text-right hidden md:block">
+                  <div className="text-right hidden md:block flex-shrink-0" style={{ width: 90 }}>
                     <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: inkMuted }}>
                       LTV
                     </div>
@@ -301,23 +301,27 @@ export default async function SegmentDetailPage({
                     </div>
                   </div>
 
-                  {pred?.product && (
-                    <div className="text-right hidden lg:block max-w-[160px]">
-                      <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: inkMuted }}>
-                        Nästa köp
-                      </div>
-                      <div className="text-[12px] truncate" style={{ color: inkSoft }}>
-                        {pred.product}
-                      </div>
-                      {pred.confidence && (
-                        <div className="text-[11px] font-semibold" style={{ color: "#6B7A63" }}>
-                          {pred.confidence}% sannolikhet
-                        </div>
-                      )}
+                  <div className="text-left hidden lg:block flex-shrink-0" style={{ width: 170 }}>
+                    <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: inkMuted }}>
+                      Nästa köp
                     </div>
-                  )}
+                    {pred?.product ? (
+                      <>
+                        <div className="text-[12px] truncate" style={{ color: inkSoft }}>
+                          {pred.product}
+                        </div>
+                        {pred.confidence ? (
+                          <div className="text-[11px] font-semibold" style={{ color: "#6B7A63" }}>
+                            {pred.confidence}% sannolikhet
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <div className="text-[12px]" style={{ color: inkMuted }}>–</div>
+                    )}
+                  </div>
 
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0" style={{ width: 100 }}>
                     <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium" style={{ color: inkMuted }}>
                       Senaste köp
                     </div>
