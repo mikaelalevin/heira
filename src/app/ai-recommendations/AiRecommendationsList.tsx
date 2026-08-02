@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { generateTablePrediction } from "@/lib/predictions";
+import { useEffect, useState } from "react";
 
 interface AiPrediction {
   product: string;
@@ -92,6 +91,16 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
     setGeneratingAll(false);
   }
 
+  // Kunder utan riktig prediktion analyseras automatiskt i bakgrunden
+  useEffect(() => {
+    customers.forEach((c) => {
+      if (!predictions[c.id] && !generating[c.id]) {
+        generateOne(c.id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customers]);
+
   const q = search.toLowerCase().trim();
   const filteredCustomers = q
     ? customers.filter((c) =>
@@ -177,21 +186,22 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
       <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${border}` }}>
         {sorted.map((c, i) => {
           const aiPred = predictions[c.id];
-          const fallback = !aiPred ? generateTablePrediction(c) : null;
-          const pred = aiPred ?? fallback!;
-          const isAi = !!aiPred;
           const isGenerating = !!generating[c.id];
           const err = errors[c.id];
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
 
-          const genDate = isAi && pred.generatedAt ? new Date(pred.generatedAt) : null;
-          if (genDate) genDate.setDate(genDate.getDate() + pred.daysUntil);
-          const actualDaysUntil = genDate
-            ? Math.max(0, Math.round((genDate.getTime() - Date.now()) / 86_400_000))
-            : pred.daysUntil;
-          const urgentSoon = actualDaysUntil <= 7;
-          const urgentMid = actualDaysUntil <= 30;
-          const daysColor = urgentSoon ? "#3E6B2F" : urgentMid ? "#8A6E55" : inkMuted;
+          let urgentSoon = false;
+          let daysColor = inkMuted;
+          if (aiPred) {
+            const genDate = aiPred.generatedAt ? new Date(aiPred.generatedAt) : null;
+            if (genDate) genDate.setDate(genDate.getDate() + aiPred.daysUntil);
+            const actualDaysUntil = genDate
+              ? Math.max(0, Math.round((genDate.getTime() - Date.now()) / 86_400_000))
+              : aiPred.daysUntil;
+            urgentSoon = actualDaysUntil <= 7;
+            const urgentMid = actualDaysUntil <= 30;
+            daysColor = urgentSoon ? "#3E6B2F" : urgentMid ? "#8A6E55" : inkMuted;
+          }
 
           return (
             <div
@@ -217,38 +227,40 @@ export function AiRecommendationsList({ customers }: { customers: Customer[] }) 
                   {displayName(c)}
                 </a>
                 <div className="text-[11px] mt-0.5" style={{ color: inkMuted }}>{c.email}</div>
-                {isAi && pred.reason && (
+                {aiPred?.reason && (
                   <div className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color: inkMuted, fontStyle: "italic" }}>
-                    {pred.reason}
+                    {aiPred.reason}
                   </div>
                 )}
               </div>
 
               {/* Prediction */}
               <div className="flex-shrink-0 text-right" style={{ minWidth: 160 }}>
-                {isGenerating ? (
-                  <div className="flex items-center justify-end gap-2 text-[12px]" style={{ color: inkMuted }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>
-                    Analyserar...
-                  </div>
-                ) : err ? (
+                {err ? (
                   <span className="text-[11px]" style={{ color: "#C45224" }}>{err}</span>
+                ) : !aiPred ? (
+                  <div className="flex items-center justify-end gap-2 text-[12.5px] italic" style={{ color: inkMuted }}>
+                    {isGenerating && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                    )}
+                    Analyserar…
+                  </div>
                 ) : (
                   <>
                     <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 14, color: ink }}>
-                      {pred.product}
+                      {aiPred.product}
                     </div>
                     <div className="flex items-center justify-end gap-2 mt-1">
                       <span className="text-[11.5px]" style={{ color: daysColor, fontWeight: urgentSoon ? 500 : 400 }}>
-                        {pred.date}{urgentSoon && <span className="ml-1">●</span>}
+                        {aiPred.date}{urgentSoon && <span className="ml-1">●</span>}
                       </span>
                       <span
                         className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
-                        style={{ background: "#F2E8D0", color: isAi ? "#6B4F5B" : ink }}
+                        style={{ background: "#F2E8D0", color: "#6B4F5B" }}
                       >
-                        {pred.confidence}%
+                        {aiPred.confidence}%
                       </span>
                     </div>
                   </>

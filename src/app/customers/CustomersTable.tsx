@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
-import { generateTablePrediction } from "@/lib/predictions";
 import { parseReturnStats, returnRateColor } from "@/lib/returns";
 
 interface SalesRep {
@@ -39,27 +38,6 @@ function getRealPrediction(c: Customer): { product: string; date: string; confid
   }
   return { product: p.product, date: p.date, confidence: p.confidence };
 }
-
-interface MockCustomer {
-  initials: string;
-  gradient: string;
-  name: string;
-  email: string;
-  segment: string;
-  segColor: string;
-  segText: string;
-  ltv: string;
-  next: string;
-}
-
-const MOCK_CUSTOMERS: MockCustomer[] = [
-  { initials: "EW", gradient: "linear-gradient(135deg,#D9896A,#C45224)", name: "Elsa Wikström", email: "elsa.w@gmail.com", segment: "Stammisar", segColor: "#F4DDD9", segText: "#6F3F3A", ltv: "32 400 kr", next: "22 maj · Linen Mini Dress" },
-  { initials: "AL", gradient: "linear-gradient(135deg,#C9A961,#8A7038)", name: "Amanda Lundqvist", email: "amanda@studio.se", segment: "Darlings", segColor: "#F2E5C5", segText: "#6A4E1B", ltv: "41 800 kr", next: "24 maj · Cashmere Cardigan" },
-  { initials: "FM", gradient: "linear-gradient(135deg,#1A1614,#4D3A35)", name: "Felicia Magnusson", email: "felicia.m@me.com", segment: "Nya kunder", segColor: "#1A1614", segText: "#FAF5EB", ltv: "11 200 kr", next: "20 maj · Oversized Blazer" },
-  { initials: "VK", gradient: "linear-gradient(135deg,#A8B5A0,#6B7A63)", name: "Vera Karlsson", email: "vera.k@gmail.com", segment: "Vänner & familj", segColor: "#DDE7D7", segText: "#3E4F36", ltv: "980 kr", next: "28 maj · Cotton T-shirt" },
-  { initials: "JE", gradient: "linear-gradient(135deg,#6B4F5B,#3D2C35)", name: "Johanna Ekberg", email: "johanna.e@hotmail.com", segment: "På väg bort", segColor: "#E3D5DC", segText: "#4D3540", ltv: "14 600 kr", next: "Osäker" },
-  { initials: "CN", gradient: "linear-gradient(135deg,#D9896A,#C07858)", name: "Carolina Nilsson", email: "carolina.n@me.com", segment: "Inaktiva kunder", segColor: "#F2E8D0", segText: "#5A4232", ltv: "6 200 kr", next: "Behöver aktivering" },
-];
 
 const ink = "#1A1614";
 const inkMuted = "#8A6E55";
@@ -343,7 +321,6 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
     });
   }
 
-  const hasRealData = realCustomers.length > 0;
   const q = search.toLowerCase().trim();
 
   const filteredReal = q
@@ -355,10 +332,6 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
           .includes(q)
       )
     : realCustomers;
-
-  const filteredMock = q
-    ? MOCK_CUSTOMERS.filter((c) => (c.name + " " + c.email).toLowerCase().includes(q))
-    : MOCK_CUSTOMERS;
 
   const sortedReal = returnSort
     ? [...filteredReal].sort((a, b) => {
@@ -424,14 +397,13 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
               </tr>
             </thead>
             <tbody>
-              {hasRealData ? (
-                sortedReal.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
-                      Inga kunder matchar sökningen.
-                    </td>
-                  </tr>
-                ) : (
+              {sortedReal.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
+                    {q ? "Inga kunder matchar sökningen." : "Inga kunder ännu."}
+                  </td>
+                </tr>
+              ) : (
                   sortedReal.map((c) => {
                     const initials = [c.first_name, c.last_name].filter(Boolean).map((n) => n![0]).join("").toUpperCase() || c.email.slice(0, 2).toUpperCase();
                     const fullName = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.email;
@@ -489,14 +461,20 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                         </td>
                         <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{ltv}</td>
                         {(() => {
-                          const pred = getRealPrediction(c) ?? generateTablePrediction(c);
+                          const pred = getRealPrediction(c);
                           return (
                             <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
-                              <div className="text-[13px] font-medium" style={{ color: ink }}>{pred.product}</div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[11.5px]" style={{ color: inkMuted }}>{pred.date}</span>
-                                <span className="text-[11px] px-[7px] py-[2px] rounded-lg font-medium" style={{ background: warm, color: inkMuted }}>{pred.confidence}%</span>
-                              </div>
+                              {pred ? (
+                                <>
+                                  <div className="text-[13px] font-medium" style={{ color: ink }}>{pred.product}</div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[11.5px]" style={{ color: inkMuted }}>{pred.date}</span>
+                                    <span className="text-[11px] px-[7px] py-[2px] rounded-lg font-medium" style={{ background: warm, color: inkMuted }}>{pred.confidence}%</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <span style={{ color: inkMuted }}>—</span>
+                              )}
                             </td>
                           );
                         })()}
@@ -510,42 +488,6 @@ export function CustomersTable({ realCustomers, salesReps, segments, initialMemb
                       </tr>
                     );
                   })
-                )
-              ) : (
-                filteredMock.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: "40px 22px", textAlign: "center", color: inkMuted, fontSize: 14 }}>
-                      Inga kunder matchar sökningen.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredMock.map((c) => (
-                    <tr key={c.email} style={{ cursor: "pointer" }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#FDFCFA")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0" style={{ background: c.gradient }}>{c.initials}</div>
-                          <div>
-                            <div className="font-semibold text-[13.5px]" style={{ color: ink }}>{c.name}</div>
-                            <div className="text-xs mt-0.5" style={{ color: inkMuted }}>{c.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
-                        <span className="text-[11px] font-medium px-[9px] py-[3px] rounded-xl" style={{ background: c.segColor, color: c.segText }}>{c.segment}</span>
-                      </td>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
-                        <span style={{ color: inkMuted, fontSize: 13 }}>–</span>
-                      </td>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{c.ltv}</td>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}`, fontSize: 13.5, color: ink }}>{c.next}</td>
-                      <td style={{ padding: "16px 22px", borderBottom: `1px solid ${border}` }}>
-                        <span style={{ color: inkMuted, fontSize: 13 }}>–</span>
-                      </td>
-                    </tr>
-                  ))
-                )
               )}
             </tbody>
           </table>
