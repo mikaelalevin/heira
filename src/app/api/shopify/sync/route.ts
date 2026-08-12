@@ -26,6 +26,7 @@ interface ShopifyOrder {
   total_price: string;
   created_at: string;
   line_items: ShopifyLineItem[];
+  source_name?: string;
 }
 
 // Shopify uses cursor-based pagination via Link response headers.
@@ -153,6 +154,7 @@ export async function POST() {
           total: Math.round(parseFloat(o.total_price)),
           created_at: o.created_at,
           items,
+          channel: o.source_name === "pos" ? "in_store" : "online",
         }, { onConflict: "shopify_order_id", ignoreDuplicates: false });
 
         if (error) errors.push(`Order #${o.order_number}: ${error.message}`);

@@ -28,7 +28,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
       .order("name"),
     supabase
       .from("orders")
-      .select("id, total, created_at, items, shopify_order_id")
+      .select("id, total, created_at, items, shopify_order_id, channel")
       .eq("customer_id", id)
       .order("created_at", { ascending: false })
       .limit(20),
@@ -60,7 +60,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
   const orders = (ordersData ?? []) as {
     id: string; total: number; created_at: string;
-    items: unknown[]; shopify_order_id: string | null;
+    items: unknown[]; shopify_order_id: string | null; channel: "in_store" | "online";
   }[];
 
   const sessions = (sessionsData ?? []) as {

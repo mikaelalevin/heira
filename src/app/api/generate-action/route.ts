@@ -11,6 +11,7 @@ export async function POST(request: Request) {
 
   const body = await request.json() as {
     customer_id?: string;
+    type?: "prediction" | "thank_you" | "follow_up";
     prediction?: {
       product: string;
       product_type?: string | null;
@@ -19,12 +20,18 @@ export async function POST(request: Request) {
       confidence: number;
       reason: string;
     };
+    follow_up_context?: string;
     rep_name?: string | null;
     rep_email?: string | null;
   };
 
   const { customer_id, prediction, rep_name, rep_email } = body;
+  const type = body.type ?? "prediction";
+  const followUpContext = body.follow_up_context?.trim() || null;
   if (!customer_id) return Response.json({ error: "customer_id krävs" }, { status: 400 });
+  if (type === "follow_up" && !followUpContext) {
+    return Response.json({ error: "Beskriv vad du vill följa upp om" }, { status: 400 });
+  }
 
   const brandId = await getBrandId();
   if (!brandId) return Response.json({ error: "Inget varumärke hittades" }, { status: 404 });
@@ -44,42 +51,27 @@ export async function POST(request: Request) {
   const brandVoiceSection = isRodebjer
     ? `
 --- BRAND VOICE: RODEBJER ---
-Du skriver som Rodebjer, ett svenskt fashion-varumärke grundat 2000 i New York av Carin Rodebjer. Er kund kallas "the strict hippie" eller "the refined eccentric" — hon är eftertänksam, konstnärlig, inte showig. Ton: poetisk men jordnära. Grundregeln är att grunda poesi i fysisk detalj (material, silhuett, referens) — aldrig hype eller känslor.
+Du skriver som en säljare på Rodebjer, ett svenskt modevarumärke grundat 2000 av Carin Rodebjer. Skriv som ett kort, personligt mejl från en riktig människa i butiken som känner kunden — vardagligt, varmt, rakt på sak. ALDRIG högtravande, ALDRIG som en dikt eller en kampanjtext. Om en mening låter som reklamcopy — skriv om den enklare.
 
 REGLER:
-1. Kundtilltal: "Kära [förnamn]" på svenska, "Dear [förnamn]" på engelska — aldrig "Hej" eller "Hi"
-2. Produkter alltid med "The [Name]"-prefix: "The Karlai", "The Adela" — aldrig bara "Karlai"
-3. Beskriv plagg med material och silhuett, inte känslor: "long sleeve jersey i chalky Opulent Rose" — inte "gorgeous must-have"
+1. Hälsning: "Hej [förnamn]," — aldrig "Kära" eller andra högtravande hälsningsfraser
+2. Skriv som du skulle mejla en kund du känner professionellt — enkla meningar, vardagsspråk, inte "editorial" ton
+3. Produkter kan nämnas med "The [Namn]"-prefix om du refererar en specifik produkt (t.ex. "The Karlai") — men tvinga inte in poetiska material- eller känslobeskrivningar i varje mening. Nämn material bara när det känns naturligt, aldrig som utsmyckning
 4. Inga utropstecken, aldrig
 5. Inga hype-ord: amazing, incredible, must-have, trendy, VIP, exclusive, deal, save, discount, shop now, limited time
-6. Korta stycken, editorial mellanrum
+6. Avsluta enkelt och genuint — t.ex. en inbjudan att komma förbi butiken. Inte en säljpitch, inte en uppmaning i imperativ ("Handla nu")
 7. Skriv INGEN avslutande hälsningsfras eller signatur — meddelandet ska sluta med sista innehållsmeningen. Signatur och kontaktuppgifter läggs till automatiskt efteråt.
-8. Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.
+8. Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa", aldrig som ett plagg om det inte är det
 
---- VISUAL WORLD (FW26 lookbook) ---
-Rodebjers FW26 utspelar sig i Stockholms offentliga rum: granit-fasader, tunnelbanor, kullersten, träd i park. Modellen är eftertänksam, individuell, aldrig glamorös. Kläderna definieras av taktilitet: fluffig mohair, ribbstickat, jacquard-blommor, läder, silke, korrduroj, plaid. Färgpaletten är dov men rik: mossgrön, dov rosa, indigo, cognac, plommon, tegel, off-white.
+--- OM KOLLEKTIONEN (FW26) — Carin Rodebjers egna ord, använd bara om det är relevant för meddelandet, tvinga inte in det ---
+"Fall/Winter 2026 symboliserar nya början. Det är Rodebjer destillerat: rosor, hästar, ruter, manchester, fransar och rosetter. Jag ville skapa från intuition och hjärta — göra kläder snarare än mode. Resultatet är en kollektion grundad i vardaglig bärbarhet, uttryckt genom en genuin Rodebjer-estetik. Tanken att gå tillbaka till grunderna kändes djupt lockande. Att fokusera på hantverket i att göra kläder."
 
-När du refererar till plagg eller säsong — grunda beskrivningen i:
-- Material och textur ("mohair", "silke", "jacquard", "korrduroj")
-- Rörelse och draperi ("faller mjukt", "lager på lager")
-- Ljus och miljö ("på tunnelbanan hem", "en morgon vid Djurgården")
-- Aldrig i trender eller känslor ("must-have", "vackert", "amazing")
+EXEMPEL PÅ RÄTT TON (fritt översatt från ett riktigt Rodebjer-mejl):
+"Hej Emma,
 
-Om ett specifikt plagg nämns — anspela på hur det känns att bära det snarare än hur det ser ut:
-- Bra: "The Karlai i mohair — den där tyngden runt axlarna innan man går ut i vinden"
-- Dåligt: "Vår nya Karlai är så snygg och trendig"
+Hoppas allt är bra med dig. Den här veckan lanserar vi vårt första drop av FW26. Tankarna kanske fortfarande är kvar i sommaren, men jag ville ändå bjuda på lite inspiration inför säsongen som kommer. Carin Rodebjer själv beskriver kollektionen som en känsla av styrka, frihet och attraktion — jag hoppas du kan känna det.
 
-Tillåtna material (hitta aldrig på andra): mohair, silke, jacquard, korrduroj, plaid, alpaca, viskos, bomull, läder.
-
-EXEMPEL PÅ RODEBJER-COPY (från deras egen webshop):
-"An everyday layering item referencing dance wear. Long sleeve, tight fitting jersey silhouette in a seasonal chalky Opulent Rose print."
-
-EXEMPEL PÅ EN RODEBJER-MEJL TILL EN KUND:
-"Kära Elsa,
-
-The Karlai återkommer för hösten — den här gången i Opulent Rose, med långa ärmar och tumhål för de lagrade dagarna som väntar. Bomullsjersey, gjord i Portugal.
-
-Vi tänkte den kunde bli en av dina."
+Om du är nyfiken är du mer än välkommen att komma förbi butiken, så visar jag kollektionen för dig personligen."
 `
     : "";
 
@@ -112,6 +104,23 @@ Vi tänkte den kunde bli en av dina."
 
   const orders = (ordersData ?? []) as { total: number; created_at: string; items: unknown[] }[];
 
+  let latestInStoreOrder: { total: number; created_at: string; items: unknown[] } | null = null;
+  if (type === "thank_you") {
+    const { data: inStoreOrderData } = await supabase
+      .from("orders")
+      .select("total, created_at, items")
+      .eq("customer_id", customer_id)
+      .eq("channel", "in_store")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const inStoreOrders = (inStoreOrderData ?? []) as { total: number; created_at: string; items: unknown[] }[];
+    latestInStoreOrder = inStoreOrders[0] ?? null;
+
+    if (!latestInStoreOrder) {
+      return Response.json({ error: "Kunden har inga köp i butik registrerade" }, { status: 400 });
+    }
+  }
+
   const firstName = customer.first_name ?? customer.email.split("@")[0];
   const fullName = [customer.first_name, customer.last_name].filter(Boolean).join(" ") || customer.email;
 
@@ -139,29 +148,75 @@ Vi tänkte den kunde bli en av dina."
   const predDays = prediction?.daysUntil ?? 14;
   const predReason = prediction?.reason ?? "";
 
+  const latestOrder = latestInStoreOrder;
+  const latestOrderItemsText = latestOrder
+    ? (Array.isArray(latestOrder.items) ? latestOrder.items : []).map((item) => {
+        if (typeof item === "object" && item !== null) {
+          const it = item as Record<string, unknown>;
+          return String(it.name ?? it.title ?? it.product_name ?? "").trim();
+        }
+        return String(item).trim();
+      }).filter(Boolean).join(", ") || null
+    : null;
+  const latestOrderDate = latestOrder
+    ? new Date(latestOrder.created_at).toLocaleDateString("sv-SE", { day: "numeric", month: "long" })
+    : null;
+
+  const taskLine =
+    type === "thank_you"
+      ? "Skriv ett kort, varmt tackmeddelande som säljaren skickar direkt till kunden efter ett köp i butiken."
+      : type === "follow_up"
+      ? "Skriv ett kort uppföljningsmeddelande som säljaren skickar direkt till kunden, baserat på kontexten säljaren gett nedan."
+      : "Skriv ett kort, personligt utgående meddelande som säljaren ska skicka direkt till kunden, baserat på en AI-prediktion om vad kunden troligen köper härnäst.";
+
+  const typeSection =
+    type === "thank_you"
+      ? `SENASTE KÖP (det som ska tackas för):
+${latestOrderItemsText ? `- Köpte: ${latestOrderItemsText}` : "- Köpte: ett plagg i butiken"}
+${latestOrder ? `- Summa: ${latestOrder.total.toLocaleString("sv")} kr` : ""}
+${latestOrderDate ? `- Datum: ${latestOrderDate}` : ""}`
+      : type === "follow_up"
+      ? `UPPFÖLJNING — KONTEXT FRÅN SÄLJAREN:
+- ${followUpContext}`
+      : `AI-PREDIKTION:
+- Kunden förväntas köpa: ${predProduct}${predType ? ` (${predType})` : ""}
+- Inom: ${predDays} dagar (ca ${predDate})
+${predReason ? `- Anledning: ${predReason}` : ""}`;
+
+  const contentInstruction =
+    type === "thank_you"
+      ? "- Tacka specifikt för det kunden just köpte, nämn plagget/plaggen naturligt — inget säljande, bara uppriktig tack"
+      : type === "follow_up"
+      ? "- Utgå från kontexten säljaren gett ovan och följ upp naturligt, som ett brev från någon som kommer ihåg samtalet"
+      : `- Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat
+- Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.`;
+
+  const closingInstruction =
+    type === "thank_you"
+      ? "- Avsluta varmt, gärna med en invit att höra av sig om något behövs"
+      : type === "follow_up"
+      ? "- Avsluta med ett konkret nästa steg kopplat till uppföljningen"
+      : "- Avsluta med ett konkret nästa steg: boka tid, kom in, ta en titt";
+
   const prompt = `Du är säljarens assistent på ${brand.name}, ett mode/beauty-varumärke med sofistikerat och personligt tonläge.
 
-UPPGIFT: Skriv ett kort, personligt utgående meddelande som säljaren ska skicka direkt till kunden. Det ska kännas som att en verklig person skriver — inte ett nyhetsbrev, inte en säljpitch.
+UPPGIFT: ${taskLine} Det ska kännas som att en verklig person skriver — inte ett nyhetsbrev, inte en säljpitch.
 
 KUNDINFO:
 - Namn: ${fullName} (tilltala som "${firstName}")
 - Totalt spenderat: ${totalSpent} kr
 - Antal köp: ${orderCount}
 ${daysSinceLast !== null ? `- Dagar sedan senaste köp: ${daysSinceLast}` : ""}
-${lastItemsText ? `- Senast köpta: ${lastItemsText}` : ""}
+${lastItemsText ? `- Tidigare köpt: ${lastItemsText}` : ""}
 ${customer.notes ? `- Säljarens anteckning: ${customer.notes}` : ""}
 
-AI-PREDIKTION:
-- Kunden förväntas köpa: ${predProduct}${predType ? ` (${predType})` : ""}
-- Inom: ${predDays} dagar (ca ${predDate})
-${predReason ? `- Anledning: ${predReason}` : ""}
+${typeSection}
 ${brandVoiceSection}
 INSTRUKTIONER:
 - Skriv på svenska, varmt och personligt
-- Nämn ett specifikt plagg eller kategori kopplat till prediktionen — naturligt, inte påtvingat
-- Referera till produkten som den typ den faktiskt är — om det är en mössa säg "mössa" eller beskriv den som en accessoar, aldrig som ett plagg. Om typ saknas — beskriv produkten neutralt utan att gissa kategori.
-- Max 4 meningar — kortare är bättre
-- Avsluta med ett konkret nästa steg: boka tid, kom in, ta en titt
+${contentInstruction}
+- Max 5 meningar, gärna i 2–3 korta stycken — som ett riktigt mejl, inte en enda lång text
+${closingInstruction}
 ${
   isRodebjer
     ? `- Skriv ingen signatur eller avslutningsfras (se regel ovan) — den läggs till automatiskt`

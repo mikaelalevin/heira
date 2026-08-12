@@ -129,6 +129,8 @@ Idag: ${today}
 
 Välj en produkt från katalogen ovan som denna kund troligt köper härnäst, baserat på deras historik. Returnera exakt produktens SKU och namn från katalogen — hitta inte på egna produkter. Motivera valet i en mening som refererar till kundens tidigare köp.
 
+Stavning: skriv alltid "${brand.name}" exakt så — om varumärkets namn nämns i "reason", stava det aldrig annorlunda (t.ex. skriv "Rodebjers" med ett e, aldrig "Rodebjeers").
+
 Svara ENBART med ett JSON-objekt, ingen annan text:
 {
   "sku": "<exakt SKU från katalogen ovan>",

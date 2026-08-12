@@ -12,6 +12,14 @@ import {
   isSecondThoughtsRisk,
 } from "@/lib/returns";
 
+type MessageType = "prediction" | "thank_you" | "follow_up";
+
+const MESSAGE_TYPE_LABELS: Record<MessageType, string> = {
+  prediction: "Prediktivt köp",
+  thank_you: "Tack för köp",
+  follow_up: "Uppföljning",
+};
+
 interface AiPrediction {
   product: string;
   predicted_product_sku?: string | null;
@@ -47,6 +55,7 @@ interface Order {
   created_at: string;
   items: unknown[];
   shopify_order_id: string | null;
+  channel: "in_store" | "online";
 }
 
 interface WebSession {
@@ -245,6 +254,9 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   const [openReceipts, setOpenReceipts] = useState<Record<string, boolean>>({});
   const [generatingMessage, setGeneratingMessage] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState("");
+  const [messageType, setMessageType] = useState<MessageType | null>(null);
+  const [followUpContext, setFollowUpContext] = useState("");
+  const [showFollowUpInput, setShowFollowUpInput] = useState(false);
   const [messageError, setMessageError] = useState("");
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
@@ -338,11 +350,20 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
     }
   }
 
-  async function generateMessage() {
-    if (!aiPrediction) {
+  async function generateMessage(type: MessageType) {
+    if (type === "prediction" && !aiPrediction) {
       setMessageError("Generera en AI-prediktion först");
       return;
     }
+    if (type === "thank_you" && !latestInStoreOrder) {
+      setMessageError("Kunden har inga köp i butik registrerade");
+      return;
+    }
+    if (type === "follow_up" && !followUpContext.trim()) {
+      setMessageError("Skriv vad du vill följa upp om");
+      return;
+    }
+    setMessageType(type);
     setGeneratingMessage(true);
     setMessageError("");
     try {
@@ -351,13 +372,15 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: customer.id,
-          prediction: {
+          type,
+          prediction: type === "prediction" && aiPrediction ? {
             product: aiPrediction.product,
             date: aiPrediction.date,
             daysUntil: aiPrediction.daysUntil,
             confidence: aiPrediction.confidence,
             reason: aiPrediction.reason,
-          },
+          } : undefined,
+          follow_up_context: type === "follow_up" ? followUpContext.trim() : undefined,
           rep_name: assignedRep?.name ?? null,
           rep_email: assignedRep?.email ?? null,
         }),
@@ -367,6 +390,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
         setMessageError(data.error ?? "Kunde inte generera meddelande");
       } else if (data.message) {
         setGeneratedMessage(data.message);
+        setShowFollowUpInput(false);
       }
     } catch {
       setMessageError("Nätverksfel — försök igen");
@@ -392,6 +416,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   }
 
   const pred = aiPrediction;
+  const latestInStoreOrder = orders.find((o) => o.channel === "in_store") ?? null;
   const resolvedBrandName = brandName ?? "HEIRA";
 
   return (
@@ -604,9 +629,27 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
               </span>
             </div>
             <div className="px-6 py-5 flex flex-col gap-4" style={{ background: "#FFFFFF" }}>
-              <p className="text-[13px] leading-relaxed" style={{ color: inkMuted }}>
-                Generera ett personligt meddelande baserat på prediktionen — klart att skicka direkt.
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] leading-relaxed" style={{ color: inkMuted }}>
+                  {generatedMessage && messageType
+                    ? `Meddelande: ${MESSAGE_TYPE_LABELS[messageType]}`
+                    : "Välj vilken typ av meddelande du vill generera — klart att skicka direkt."}
+                </p>
+                {generatedMessage && (
+                  <button
+                    onClick={() => {
+                      setGeneratedMessage("");
+                      setMessageType(null);
+                      setShowFollowUpInput(false);
+                      setMessageError("");
+                    }}
+                    className="text-[11.5px] font-medium whitespace-nowrap"
+                    style={{ background: "transparent", color: inkMuted, border: "none", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}
+                  >
+                    Byt typ
+                  </button>
+                )}
+              </div>
               {messageError && (
                 <p className="text-[12px]" style={{ color: "#C45224" }}>{messageError}</p>
               )}
@@ -684,7 +727,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                       )}
                     </button>
                     <button
-                      onClick={generateMessage}
+                      onClick={() => messageType && generateMessage(messageType)}
                       disabled={generatingMessage}
                       className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg"
                       style={{ background: "transparent", color: inkMuted, border: `1px solid ${border}`, cursor: generatingMessage ? "not-allowed" : "pointer", fontFamily: "inherit" }}
@@ -699,24 +742,79 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={generateMessage}
-                  disabled={generatingMessage || !pred}
-                  className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg self-start"
-                  style={{ background: generatingMessage || !pred ? warm : ink, color: generatingMessage || !pred ? inkMuted : bg, border: "none", cursor: generatingMessage || !pred ? "not-allowed" : "pointer", fontFamily: "inherit" }}
-                >
-                  {generatingMessage ? (
-                    <>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                      Skriver meddelande...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                      Generera personligt meddelande
-                    </>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-2.5 flex-wrap">
+                    <button
+                      onClick={() => generateMessage("prediction")}
+                      disabled={generatingMessage || !pred}
+                      title={!pred ? "Generera en AI-prediktion först" : undefined}
+                      className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg"
+                      style={{ background: generatingMessage || !pred ? warm : ink, color: generatingMessage || !pred ? inkMuted : bg, border: "none", cursor: generatingMessage || !pred ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                    >
+                      {generatingMessage && messageType === "prediction" ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      ) : (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                      )}
+                      Prediktivt köp
+                    </button>
+                    <button
+                      onClick={() => generateMessage("thank_you")}
+                      disabled={generatingMessage || !latestInStoreOrder}
+                      title={!latestInStoreOrder ? "Kunden har inga köp i butik registrerade" : undefined}
+                      className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg"
+                      style={{ background: generatingMessage || !latestInStoreOrder ? warm : ink, color: generatingMessage || !latestInStoreOrder ? inkMuted : bg, border: "none", cursor: generatingMessage || !latestInStoreOrder ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                    >
+                      {generatingMessage && messageType === "thank_you" ? (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      ) : (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+                      )}
+                      Tacka för köp
+                    </button>
+                    <button
+                      onClick={() => setShowFollowUpInput((v) => !v)}
+                      disabled={generatingMessage}
+                      className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg"
+                      style={{ background: showFollowUpInput ? ink : warm, color: showFollowUpInput ? bg : inkMuted, border: "none", cursor: generatingMessage ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                      Följ upp
+                    </button>
+                  </div>
+                  {showFollowUpInput && (
+                    <div className="flex flex-col gap-2.5">
+                      <input
+                        type="text"
+                        value={followUpContext}
+                        onChange={(e) => setFollowUpContext(e.target.value)}
+                        placeholder="t.ex. Vi pratade om att skicka en lookbook"
+                        className={inputClass}
+                        style={inputStyle}
+                        onFocus={(e) => (e.target.style.borderColor = ink)}
+                        onBlur={(e) => (e.target.style.borderColor = border)}
+                      />
+                      <button
+                        onClick={() => generateMessage("follow_up")}
+                        disabled={generatingMessage || !followUpContext.trim()}
+                        className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-2 rounded-lg self-start"
+                        style={{ background: generatingMessage || !followUpContext.trim() ? warm : ink, color: generatingMessage || !followUpContext.trim() ? inkMuted : bg, border: "none", cursor: generatingMessage || !followUpContext.trim() ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                      >
+                        {generatingMessage && messageType === "follow_up" ? (
+                          <>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            Skriver meddelande...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            Generera uppföljning
+                          </>
+                        )}
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
               )}
             </div>
           </div>
@@ -864,10 +962,10 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
           <div className="rounded-2xl p-6 flex flex-col gap-4" style={{ background: "#FFFFFF", border: `1px solid ${border}` }}>
             <div className="flex items-center justify-between">
               <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 16, fontWeight: 500, color: ink }}>
-                Orderhistorik
+                Köp
               </div>
               {orders.length > 0 && (
-                <span className="text-[12px]" style={{ color: inkMuted }}>{orders.length} order{orders.length !== 1 ? "s" : ""}</span>
+                <span className="text-[12px]" style={{ color: inkMuted }}>{orders.length} köp</span>
               )}
             </div>
 
@@ -890,8 +988,19 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
                             </svg>
                           </div>
                           <div>
-                            <div className="text-[13px] font-medium" style={{ color: ink }}>
-                              {formatDate(order.created_at)}
+                            <div className="flex items-center gap-2">
+                              <div className="text-[13px] font-medium" style={{ color: ink }}>
+                                {formatDate(order.created_at)}
+                              </div>
+                              <span
+                                className="text-[10px] uppercase tracking-[0.06em] font-semibold px-1.5 py-0.5 rounded"
+                                style={{
+                                  background: order.channel === "in_store" ? "#DDE7D7" : warm,
+                                  color: order.channel === "in_store" ? "#3E4F36" : inkMuted,
+                                }}
+                              >
+                                {order.channel === "in_store" ? "I butik" : "Online"}
+                              </span>
                             </div>
                             {itemNames ? (
                               <div className="text-[12px] mt-0.5" style={{ color: inkMuted }}>{itemNames}</div>
