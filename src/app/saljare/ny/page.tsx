@@ -104,7 +104,7 @@ export default function NySaljare() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="t.ex. mikaela@studioacacia.se"
+              placeholder="t.ex. mikaela@rodebjer.com"
               className="w-full px-4 py-3 rounded-xl text-sm outline-none"
               style={{ background: bg, border: `1px solid ${border}`, color: ink, fontFamily: "inherit" }}
               onFocus={(e) => (e.target.style.borderColor = ink)}
