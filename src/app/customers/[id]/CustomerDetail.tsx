@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getMoodGradient } from "@/lib/mood-gradients";
@@ -240,6 +240,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const autoTriggeredRef = useRef(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -350,7 +351,8 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
     }
   }
 
-  async function generateMessage(type: MessageType) {
+  async function generateMessage(type: MessageType, followUpOverride?: string) {
+    const followUpValue = followUpOverride ?? followUpContext;
     if (type === "prediction" && !aiPrediction) {
       setMessageError("Generera en AI-prediktion först");
       return;
@@ -359,7 +361,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
       setMessageError("Kunden har inga köp i butik registrerade");
       return;
     }
-    if (type === "follow_up" && !followUpContext.trim()) {
+    if (type === "follow_up" && !followUpValue.trim()) {
       setMessageError("Skriv vad du vill följa upp om");
       return;
     }
@@ -380,7 +382,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
             confidence: aiPrediction.confidence,
             reason: aiPrediction.reason,
           } : undefined,
-          follow_up_context: type === "follow_up" ? followUpContext.trim() : undefined,
+          follow_up_context: type === "follow_up" ? followUpValue.trim() : undefined,
           rep_name: assignedRep?.name ?? null,
           rep_email: assignedRep?.email ?? null,
         }),
@@ -418,6 +420,29 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   const pred = aiPrediction;
   const latestInStoreOrder = orders.find((o) => o.channel === "in_store") ?? null;
   const resolvedBrandName = brandName ?? "HEIRA";
+
+  useEffect(() => {
+    if (autoTriggeredRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") !== "generate") return;
+    autoTriggeredRef.current = true;
+
+    const type = params.get("type") as MessageType | null;
+    const context = params.get("context");
+
+    document.getElementById("atgarder-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (type === "follow_up") {
+      setShowFollowUpInput(true);
+      if (context) setFollowUpContext(context);
+      generateMessage("follow_up", context ?? undefined);
+    } else if (type === "prediction" || type === "thank_you") {
+      generateMessage(type);
+    }
+
+    router.replace(`/customers/${customer.id}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="animate-fade-in">
@@ -618,7 +643,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
           )}
 
           {/* Åtgärder */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${border}`, order: editing ? 5 : 3 }}>
+          <div id="atgarder-panel" className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${border}`, order: editing ? 5 : 3 }}>
             <div className="px-6 py-4 flex items-center gap-2.5" style={{ background: warm }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth="1.8">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
