@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { Greeting } from "./Greeting";
+import { SuggestedActions } from "./SuggestedActions";
 import { parseReturnStats, returnRateColor } from "@/lib/returns";
 
 const ink = "#1A1614";
@@ -190,6 +191,8 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      <SuggestedActions />
 
       {/* Senaste ordrar */}
       {recentOrders.length > 0 && (
