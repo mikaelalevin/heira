@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import { filterSegment } from "@/lib/segments";
+import { RETURN_TYPE_LABELS } from "@/lib/returns";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ interface AiPrediction {
 interface ReturnStats {
   return_rate: number;
   returns_count: number;
+  most_returned_type: string;
+  last_return_at: string;
 }
 
 interface CustomerRow {
@@ -111,16 +114,24 @@ export async function GET() {
 
   const actions: SuggestedAction[] = [];
 
-  // 1. Second Thoughts har handlat — högst prio
+  // 1. Second Thoughts har returnerat — högst prio
+  // Triggar på ett faktiskt returtillfälle (last_return_at), inte på ett nytt köp —
+  // return_stats är en aggregerad kundstat och kan inte kopplas till en specifik order.
   const secondThoughts = customers
-    .filter((c) => c.return_stats && c.return_stats.return_rate >= 0.45 && latestOrderByCustomer.has(c.id))
-    .map((c) => ({ c, order: latestOrderByCustomer.get(c.id)! }))
-    .sort((a, b) => b.c.return_stats!.return_rate - a.c.return_stats!.return_rate)
+    .filter(
+      (c) =>
+        c.return_stats &&
+        c.return_stats.return_rate >= 0.45 &&
+        c.return_stats.last_return_at &&
+        c.return_stats.last_return_at >= fourteenDaysAgo
+    )
+    .sort((a, b) => b.return_stats!.return_rate - a.return_stats!.return_rate)
     .slice(0, 2);
 
-  for (const { c, order } of secondThoughts) {
-    const name = itemName(order.items) ?? "ett plagg";
-    const da = daysAgo(order.created_at);
+  for (const c of secondThoughts) {
+    const rs = c.return_stats!;
+    const typeLabel = RETURN_TYPE_LABELS[rs.most_returned_type] ?? rs.most_returned_type ?? "ett plagg";
+    const da = daysAgo(rs.last_return_at);
     actions.push({
       id: `second-thoughts-${c.id}`,
       category: "second-thoughts",
@@ -130,9 +141,9 @@ export async function GET() {
         first_name: c.first_name,
         last_name: c.last_name,
         email: c.email,
-        return_rate: c.return_stats!.return_rate,
+        return_rate: rs.return_rate,
       },
-      context: `Handlade ${name} för ${dagarText(da)} sedan — returnerar ofta, kanske dags för en stylingtimme istället för fler köp.`,
+      context: `Returnerade ${typeLabel} för ${dagarText(da)} sedan — returnerar ofta, kanske dags för en stylingtimme istället för fler köp.`,
       cta_label: "Boka stylingsamtal",
       cta_action: "generate-styling-offer",
     });
