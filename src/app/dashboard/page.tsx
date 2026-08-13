@@ -163,7 +163,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Kund-rad */}
-      <div className={`grid gap-4 mb-6 ${avgReturnRate !== null ? "grid-cols-4" : "grid-cols-3"}`}>
+      <div className={`grid gap-4 mb-6 ${avgReturnRate !== null ? "grid-cols-3" : "grid-cols-2"}`}>
         <div className="rounded-2xl p-5" style={{ background: card, border: `1px solid ${border}` }}>
           <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium mb-2" style={{ color: inkMuted }}>Kunder totalt</div>
           <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 26, color: ink, lineHeight: 1 }}>{totalCustomers.toLocaleString("sv")}</div>
@@ -177,15 +177,6 @@ export default async function DashboardPage() {
             {customers.filter((c) => c.last_order_at && c.last_order_at >= ninetyDaysAgo).length.toLocaleString("sv")}
           </div>
           <div className="mt-2 text-[11.5px]" style={{ color: inkMuted }}>Köpt senaste 90 dagarna</div>
-        </div>
-        <div className="rounded-2xl p-5" style={{ background: churnRisk > 0 ? "#FDF0EC" : card, border: `1px solid ${churnRisk > 0 ? "#E8B4A4" : border}` }}>
-          <div className="text-[10.5px] uppercase tracking-[0.08em] font-medium mb-2" style={{ color: churnRisk > 0 ? "#C45224" : inkMuted }}>Churn-risk</div>
-          <div style={{ fontFamily: "var(--font-fraunces), serif", fontSize: 26, color: churnRisk > 0 ? "#C45224" : ink, lineHeight: 1 }}>{churnRisk}</div>
-          <div className="mt-2 text-[11.5px]" style={{ color: churnRisk > 0 ? "#C45224" : inkMuted }}>
-            {churnRisk > 0
-              ? <a href="/customers" style={{ color: "inherit" }}>Se kunder i riskzon →</a>
-              : "Inga kunder i riskzon"}
-          </div>
         </div>
         {avgReturnRate !== null && (
           <div className="rounded-2xl p-5" style={{ background: card, border: `1px solid ${border}` }}>
