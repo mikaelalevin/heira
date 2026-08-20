@@ -9,7 +9,7 @@ import {
   RETURN_REASON_LABELS,
   RETURN_TYPE_LABELS,
   returnRateColor,
-  isSecondThoughtsRisk,
+  isKuratorRisk,
 } from "@/lib/returns";
 import { getPrimarySegment, SEGMENT_META, AUTO_SEGMENT_BADGE_COLORS, type CustomerForSegment } from "@/lib/segments";
 
@@ -478,12 +478,12 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
             <p style={{ color: inkMuted, fontSize: 14 }}>{customer.email}</p>
             {returnStats && (
               <div className="mt-2">
-                {isSecondThoughtsRisk(returnStats.return_rate) ? (
+                {isKuratorRisk(returnStats.return_rate) ? (
                   <span
                     className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-lg"
                     style={{ background: "#6B4F5B", color: "#FAF5EB" }}
                   >
-                    Second Thoughts · {Math.round(returnStats.return_rate * 100)}% returrate
+                    Kurator · {Math.round(returnStats.return_rate * 100)}% returrate
                   </span>
                 ) : (
                   <span

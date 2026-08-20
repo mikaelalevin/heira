@@ -69,26 +69,29 @@ Vi tänkte den kunde bli en av dina."
 `
     : "";
 
-  const secondThoughtsSection =
-    isRodebjer && segment_type === "second-thoughts"
+  const kuratorerSection =
+    isRodebjer && segment_type === "kuratorer"
       ? `
---- SPECIAL: SECOND THOUGHTS ---
-Detta segment består av kunder som ofta returnerar sina köp. Målet med detta mail är INTE att sälja mer — det är att erbjuda ett annat sätt att relatera till varumärket. Skriv därför:
+--- SPECIAL: KURATORER ---
+Detta segment består av kunder som noggrant curerar sin garderob genom att prova sig fram. De är inte problem-kunder — de är omtänksamma köpare som behöver mer hjälp att välja rätt första gången. Målet med detta mail är att erbjuda ett annat sätt att relatera till varumärket:
 
-1. Erkänn subtilt (utan skam) att val kan vara svåra
-2. Erbjud ett personligt stylingsamtal som alternativ till att köpa online
-3. Signalera att Rodebjer föredrar färre, mer medvetna köp (matchar deras sustainability-position)
+1. Erkänn deras noggrannhet (utan att verka desperat efter tacksamhet)
+2. Erbjud ett personligt stylingsamtal som alternativ till att köpa på egen hand
+3. Signalera att Rodebjer föredrar färre, mer medvetna köp (matchar sustainability-positionen)
 4. Ingen produkt ska nämnas specifikt — samtalet är inte om ett plagg utan om en relation
 5. CTA: "Boka ett stylingsamtal" istället för "Handla nu"
 
-EXEMPEL PÅ TON (skriv i denna anda men inte kopiera):
+EXEMPEL PÅ TON:
 "Kära Elsa,
 
-Ibland är det svåraste med kläder inte att köpa dem — utan att veta säkert att de är dina. Vi märker att du testat mycket senaste tiden, och att en del gått tillbaka.
+Ibland är det svåraste med kläder inte att köpa dem — utan att veta säkert att de är dina. Vi märker att du provar noggrant, och att en del gått tillbaka.
 
 Vi tänkte att vi kunde göra det annorlunda. Boka en halvtimme med en av våra stylister — i butik eller online. Vi tittar tillsammans på vad som redan bor i din garderob och vad som skulle passa in där.
 
-Ingen kassa, inget måste. Bara ett samtal."
+Ingen kassa, inget måste. Bara ett samtal.
+
+Med varma hälsningar,
+Rodebjer"
 `
       : "";
 
@@ -140,7 +143,7 @@ ${
     ? `- Skriv ingen signatur eller avslutningsfras (se regel ovan) — den läggs till automatiskt`
     : `- Signera med: "${repName ? repName + ", " + brandName : brandName}"`
 }
-${brandVoiceSection}${secondThoughtsSection}
+${brandVoiceSection}${kuratorerSection}
 Svara ENBART med giltig JSON i detta format (inga kommentarer, ingen förklaring):
 {"subject":"ämnesrad här","body":"brödtext här\\nmed \\\\n för radbrytningar"}`;
 

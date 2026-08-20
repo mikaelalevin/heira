@@ -4,7 +4,7 @@ export type SegmentType =
   | "vanner-familj"
   | "nya"
   | "inaktiva"
-  | "second-thoughts";
+  | "kuratorer";
 
 export const SEGMENT_META: Record<
   SegmentType,
@@ -12,9 +12,9 @@ export const SEGMENT_META: Record<
 > = {
   vip: {
     name: "Darlings",
-    description: "Dina bästa kunder med högst köpvärde och flest ordrar.",
+    description: "Rodebjers VIP-kunder med särskild rabatt. Personliga relationer, inte konvertering.",
     gradient: "linear-gradient(135deg, #C9A961 0%, #8A7038 100%)",
-    tag: "Topp 5%",
+    tag: "VIP",
   },
   stammisar: {
     name: "Stammisar",
@@ -40,11 +40,11 @@ export const SEGMENT_META: Record<
     gradient: "linear-gradient(135deg, #C4B8A8 0%, #9A8878 100%)",
     tag: "Inaktiva",
   },
-  "second-thoughts": {
-    name: "Second Thoughts",
-    description: "Kunder som ofta returnerar. Erbjud personlig styling istället för fler köp.",
+  kuratorer: {
+    name: "Kuratorer",
+    description: "Kunder som noggrant curerar sin garderob genom att prova. Perfekt målgrupp för personlig styling.",
     gradient: "linear-gradient(135deg, #6B4F5B 0%, #3D2C35 100%)",
-    tag: "Ofta returer",
+    tag: "Kurerar noga",
   },
 };
 
@@ -56,7 +56,7 @@ export const RODEBJER_SEGMENT_IMAGES: Record<SegmentType, string> = {
   inaktiva: "/rodebjer/segments/inaktiva-kunder.jpg",
   // Ingen dedikerad bild vald ännu — svart läderjacka + röd scarf matchar tonen
   // (dramatiskt utan att vara aggressivt).
-  "second-thoughts": "/rodebjer/segments/pa-vag-bort.jpg",
+  kuratorer: "/rodebjer/segments/pa-vag-bort.jpg",
 };
 
 export interface CustomerForSegment {
@@ -73,7 +73,7 @@ export const AUTO_SEGMENT_BADGE_COLORS: Record<SegmentType, { bg: string; text: 
   "vanner-familj": { bg: "#E8E3C8", text: "#6A5C1E" },
   nya: { bg: "#DDE7D7", text: "#3E4F36" },
   inaktiva: { bg: "#F2E8D0", text: "#5A4232" },
-  "second-thoughts": { bg: "#E3D5DC", text: "#4D3540" },
+  kuratorer: { bg: "#E3D5DC", text: "#4D3540" },
 };
 
 const AUTO_SEGMENT_PRIORITY: SegmentType[] = [
@@ -137,7 +137,7 @@ export function filterSegment(
       );
     case "vanner-familj":
       return customers.filter((c) => c.email.endsWith("@icloud.com"));
-    case "second-thoughts":
+    case "kuratorer":
       return customers.filter(
         (c) => !!c.return_stats && c.return_stats.return_rate >= 0.45 && c.return_stats.returns_count >= 2
       );

@@ -8,7 +8,7 @@ const border = "#DDD0B5";
 const card = "#FFFFFF";
 const warm = "#F2E8D0";
 
-type Category = "second-thoughts" | "imminent-prediction" | "thank-you" | "win-back";
+type Category = "kuratorer" | "imminent-prediction" | "thank-you" | "win-back";
 
 interface SuggestedAction {
   id: string;
@@ -27,14 +27,14 @@ interface SuggestedAction {
 }
 
 const CATEGORY_DOT: Record<Category, string> = {
-  "second-thoughts": "#B47A75", // rose
+  kuratorer: "#B47A75", // rose
   "imminent-prediction": "#C9A961", // gold
   "thank-you": "#6B7A63", // sage
   "win-back": "#6B4F5B", // plum
 };
 
 const CATEGORY_MESSAGE_TYPE: Record<Category, { type: "prediction" | "thank_you" | "follow_up"; context?: string }> = {
-  "second-thoughts": {
+  kuratorer: {
     type: "follow_up",
     context: "Kunden returnerar ofta — föreslå en personlig stylingtimme istället för fler köp.",
   },

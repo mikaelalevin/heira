@@ -5,7 +5,7 @@ import { RETURN_TYPE_LABELS } from "@/lib/returns";
 
 export const dynamic = "force-dynamic";
 
-type Category = "second-thoughts" | "imminent-prediction" | "thank-you" | "win-back";
+type Category = "kuratorer" | "imminent-prediction" | "thank-you" | "win-back";
 
 interface AiPrediction {
   product: string;
@@ -57,7 +57,7 @@ interface SuggestedAction {
 }
 
 const PRIORITY: Record<Category, number> = {
-  "second-thoughts": 1,
+  kuratorer: 1,
   "imminent-prediction": 2,
   "thank-you": 3,
   "win-back": 4,
@@ -114,10 +114,10 @@ export async function GET() {
 
   const actions: SuggestedAction[] = [];
 
-  // 1. Second Thoughts har returnerat — högst prio
+  // 1. Kurator har returnerat — högst prio
   // Triggar på ett faktiskt returtillfälle (last_return_at), inte på ett nytt köp —
   // return_stats är en aggregerad kundstat och kan inte kopplas till en specifik order.
-  const secondThoughts = customers
+  const kuratorer = customers
     .filter(
       (c) =>
         c.return_stats &&
@@ -128,14 +128,14 @@ export async function GET() {
     .sort((a, b) => b.return_stats!.return_rate - a.return_stats!.return_rate)
     .slice(0, 2);
 
-  for (const c of secondThoughts) {
+  for (const c of kuratorer) {
     const rs = c.return_stats!;
     const typeLabel = RETURN_TYPE_LABELS[rs.most_returned_type] ?? rs.most_returned_type ?? "ett plagg";
     const da = daysAgo(rs.last_return_at);
     actions.push({
-      id: `second-thoughts-${c.id}`,
-      category: "second-thoughts",
-      priority: PRIORITY["second-thoughts"],
+      id: `kurator-${c.id}`,
+      category: "kuratorer",
+      priority: PRIORITY.kuratorer,
       customer: {
         id: c.id,
         first_name: c.first_name,

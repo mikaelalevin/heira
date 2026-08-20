@@ -27,7 +27,7 @@ const SEGMENT_AI_SUGGESTION: Record<SegmentType, string> = {
   "vanner-familj": "Säsongspåminnelse med personlig hälsning fungerar bättre än kampanjerbjudanden för detta segment. Dessa kunder reagerar på relation, inte rabatter — håll tonen varm och informell.",
   nya: "Skicka ett välkomstmail inom 48 timmar med produktrekommendationer baserade på första köpet. Chansen för ett andra köp minskar med 40% efter 14 dagar utan kontakt.",
   inaktiva: "Reaktivering med en stark anledning att återvända — ny kollektion eller limiterat erbjudande — ökar konverteringschansen 2× jämfört med generella rabatter. Timing: de närmaste 30 dagarna.",
-  "second-thoughts": "Fler kampanjer ökar inte köp här — de ökar returer. Erbjud ett personligt stylingsamtal istället för fler produktrekommendationer. Målet är färre, mer medvetna köp.",
+  kuratorer: "Fler kampanjer ökar inte köp här — de ökar returer. Erbjud ett personligt stylingsamtal istället för fler produktrekommendationer. Målet är färre, mer medvetna köp.",
 };
 
 interface AIPrediction {
@@ -55,6 +55,10 @@ export default async function SegmentDetailPage({
 
   if (type === "pa-vag-bort") {
     redirect("/segments/inaktiva");
+  }
+
+  if (type === "second-thoughts") {
+    redirect("/segments/kuratorer");
   }
 
   if (!VALID_TYPES.includes(type as SegmentType)) notFound();

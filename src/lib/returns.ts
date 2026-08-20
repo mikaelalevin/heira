@@ -35,7 +35,7 @@ export const RETURN_TYPE_LABELS: Record<string, string> = {
   body: "Body",
 };
 
-// < 15%: neutral · 15–35%: normal · 35–50%: dov varning · 50%+: "Second Thoughts"-nivå
+// < 15%: neutral · 15–35%: normal · 35–50%: dov varning · 50%+: "Kurator"-nivå
 export function returnRateColor(rate: number): string {
   if (rate < 0.15) return "#8A6E55";
   if (rate < 0.35) return "#1A1614";
@@ -43,6 +43,6 @@ export function returnRateColor(rate: number): string {
   return "#6B4F5B";
 }
 
-export function isSecondThoughtsRisk(rate: number): boolean {
+export function isKuratorRisk(rate: number): boolean {
   return rate >= 0.5;
 }
