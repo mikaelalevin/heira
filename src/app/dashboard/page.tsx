@@ -3,6 +3,7 @@ import { getBrandId } from "@/lib/brand";
 import { Greeting } from "./Greeting";
 import { SuggestedActions } from "./SuggestedActions";
 import { parseReturnStats, returnRateColor } from "@/lib/returns";
+import { filterSegment, type CustomerForSegment } from "@/lib/segments";
 
 const ink = "#1A1614";
 const inkMuted = "#8A6E55";
@@ -89,7 +90,7 @@ export default async function DashboardPage() {
   const totalRevenue = customers.reduce((s, c) => s + (c.total_spent ?? 0), 0);
   const totalCustomers = customers.length;
   const newThisMonth = customers.filter((c) => c.created_at >= thirtyDaysAgo).length;
-  const churnRisk = customers.filter((c) => c.last_order_at && c.last_order_at < ninetyDaysAgo).length;
+  const churnRisk = filterSegment("inaktiva", customers as unknown as CustomerForSegment[]).length;
   const totalOrders = customers.reduce((s, c) => s + (c.order_count ?? 0), 0);
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
