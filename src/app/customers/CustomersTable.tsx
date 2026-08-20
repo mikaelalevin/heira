@@ -71,7 +71,6 @@ function getAutoSegment(c: Customer): { label: string; bg: string; text: string 
   const lastOrderMs = c.last_order_at ? new Date(c.last_order_at).getTime() : null;
   const daysSinceLast = lastOrderMs ? Math.floor((now - lastOrderMs) / 86_400_000) : null;
   const ninetyDaysAgo = now - 90 * 86_400_000;
-  const oneEightyDaysAgo = now - 180 * 86_400_000;
   const orders = c.order_count ?? 0;
   const spent = c.total_spent ?? 0;
 
@@ -86,9 +85,6 @@ function getAutoSegment(c: Customer): { label: string; bg: string; text: string 
   }
   if (orders === 1) {
     return { label: "Nya kunder", bg: "#DDE7D7", text: "#3E4F36" };
-  }
-  if (lastOrderMs && lastOrderMs < ninetyDaysAgo && lastOrderMs >= oneEightyDaysAgo) {
-    return { label: "På väg bort", bg: "#E3D5DC", text: "#4D3540" };
   }
   if (orders >= 1 && (!lastOrderMs || lastOrderMs < ninetyDaysAgo)) {
     return { label: "Inaktiva", bg: "#F2E8D0", text: "#5A4232" };

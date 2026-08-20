@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBrandId } from "@/lib/brand";
 import {
@@ -27,7 +27,6 @@ const SEGMENT_AI_SUGGESTION: Record<SegmentType, string> = {
   "vanner-familj": "Säsongspåminnelse med personlig hälsning fungerar bättre än kampanjerbjudanden för detta segment. Dessa kunder reagerar på relation, inte rabatter — håll tonen varm och informell.",
   nya: "Skicka ett välkomstmail inom 48 timmar med produktrekommendationer baserade på första köpet. Chansen för ett andra köp minskar med 40% efter 14 dagar utan kontakt.",
   inaktiva: "Reaktivering med en stark anledning att återvända — ny kollektion eller limiterat erbjudande — ökar konverteringschansen 2× jämfört med generella rabatter. Timing: de närmaste 30 dagarna.",
-  "pa-vag-bort": "Kritiskt fönster: dessa kunder är fortfarande nåbara men håller på att glömma varumärket. En 'vi saknar dig'-kampanj bör skickas inom 7 dagar för bäst effekt.",
   "second-thoughts": "Fler kampanjer ökar inte köp här — de ökar returer. Erbjud ett personligt stylingsamtal istället för fler produktrekommendationer. Målet är färre, mer medvetna köp.",
 };
 
@@ -53,6 +52,10 @@ export default async function SegmentDetailPage({
   params: Promise<{ type: string }>;
 }) {
   const { type } = await params;
+
+  if (type === "pa-vag-bort") {
+    redirect("/segments/inaktiva");
+  }
 
   if (!VALID_TYPES.includes(type as SegmentType)) notFound();
   const segmentType = type as SegmentType;

@@ -201,7 +201,7 @@ export async function GET() {
     });
   }
 
-  // 4. Kunder på väg bort — återanvänder filterSegment
+  // 4. Inaktiva kunder — återanvänder filterSegment
   const segmentCustomers = customers.map((c) => ({
     id: c.id,
     first_name: c.first_name,
@@ -213,7 +213,7 @@ export async function GET() {
     return_stats: c.return_stats,
   }));
 
-  const winBack = (filterSegment("pa-vag-bort", segmentCustomers) as typeof segmentCustomers)
+  const winBack = (filterSegment("inaktiva", segmentCustomers) as typeof segmentCustomers)
     .sort((a, b) => new Date(a.last_order_at ?? 0).getTime() - new Date(b.last_order_at ?? 0).getTime())
     .slice(0, 2);
 

@@ -4,7 +4,6 @@ export type SegmentType =
   | "vanner-familj"
   | "nya"
   | "inaktiva"
-  | "pa-vag-bort"
   | "second-thoughts";
 
 export const SEGMENT_META: Record<
@@ -37,15 +36,9 @@ export const SEGMENT_META: Record<
   },
   inaktiva: {
     name: "Inaktiva kunder",
-    description: "Har inte handlat på över 90 dagar men har historik.",
+    description: "Har inte handlat på över 90 dagar. Rätt återkoppling nu kan väcka relationen igen.",
     gradient: "linear-gradient(135deg, #C4B8A8 0%, #9A8878 100%)",
     tag: "Inaktiva",
-  },
-  "pa-vag-bort": {
-    name: "På väg bort",
-    description: "Var aktiva för 3–6 månader sedan. Behöver en anledning att komma tillbaka.",
-    gradient: "linear-gradient(135deg, #7D2027 0%, #4A1218 100%)",
-    tag: "Churn-risk",
   },
   "second-thoughts": {
     name: "Second Thoughts",
@@ -61,7 +54,6 @@ export const RODEBJER_SEGMENT_IMAGES: Record<SegmentType, string> = {
   "vanner-familj": "/rodebjer/segments/vanner-familj.jpg",
   nya: "/rodebjer/segments/nya-kunder.jpg",
   inaktiva: "/rodebjer/segments/inaktiva-kunder.jpg",
-  "pa-vag-bort": "/rodebjer/segments/pa-vag-bort.jpg",
   // Ingen dedikerad bild vald ännu — svart läderjacka + röd scarf matchar tonen
   // (dramatiskt utan att vara aggressivt).
   "second-thoughts": "/rodebjer/segments/pa-vag-bort.jpg",
@@ -96,7 +88,6 @@ export function filterSegment(
 ): CustomerForSegment[] {
   const now = Date.now();
   const ninetyDaysAgo = new Date(now - 90 * 86_400_000).toISOString();
-  const oneEightyDaysAgo = new Date(now - 180 * 86_400_000).toISOString();
 
   switch (type) {
     case "vip":
@@ -116,13 +107,6 @@ export function filterSegment(
         (c) =>
           (c.order_count ?? 0) >= 1 &&
           (!c.last_order_at || c.last_order_at < ninetyDaysAgo)
-      );
-    case "pa-vag-bort":
-      return customers.filter(
-        (c) =>
-          !!c.last_order_at &&
-          c.last_order_at < ninetyDaysAgo &&
-          c.last_order_at >= oneEightyDaysAgo
       );
     case "vanner-familj":
       return customers.filter((c) => c.email.endsWith("@icloud.com"));
