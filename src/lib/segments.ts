@@ -67,6 +67,33 @@ export interface CustomerForSegment {
   return_stats?: { return_rate: number; returns_count: number } | null;
 }
 
+export const AUTO_SEGMENT_BADGE_COLORS: Record<SegmentType, { bg: string; text: string }> = {
+  vip: { bg: "#F2E5C5", text: "#6A4E1B" },
+  stammisar: { bg: "#F4DDD9", text: "#6F3F3A" },
+  "vanner-familj": { bg: "#E8E3C8", text: "#6A5C1E" },
+  nya: { bg: "#DDE7D7", text: "#3E4F36" },
+  inaktiva: { bg: "#F2E8D0", text: "#5A4232" },
+  "second-thoughts": { bg: "#E3D5DC", text: "#4D3540" },
+};
+
+const AUTO_SEGMENT_PRIORITY: SegmentType[] = [
+  "vanner-familj",
+  "vip",
+  "stammisar",
+  "nya",
+  "inaktiva",
+];
+
+// Returns the single most relevant segment for a customer, used for the
+// auto-segment badge shown on customer rows and profiles. Reuses filterSegment
+// so it can never drift from the segment definitions above.
+export function getPrimarySegment(customer: CustomerForSegment): SegmentType | null {
+  for (const type of AUTO_SEGMENT_PRIORITY) {
+    if (filterSegment(type, [customer]).length > 0) return type;
+  }
+  return null;
+}
+
 export interface SegmentStats {
   type: SegmentType;
   name: string;

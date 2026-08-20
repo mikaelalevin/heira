@@ -11,6 +11,7 @@ import {
   returnRateColor,
   isSecondThoughtsRisk,
 } from "@/lib/returns";
+import { getPrimarySegment, SEGMENT_META, AUTO_SEGMENT_BADGE_COLORS, type CustomerForSegment } from "@/lib/segments";
 
 type MessageType = "prediction" | "thank_you" | "follow_up";
 
@@ -282,6 +283,7 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
   const prob = Math.min(95, 30 + (customer.order_count ?? 0) * 8 + ((customer.total_spent ?? 0) > 10000 ? 20 : 0));
   const returnStats = parseReturnStats(customer.return_stats);
   const showReturnDetails = !!returnStats && returnStats.returns_count >= 3;
+  const autoSegType = getPrimarySegment(customer as unknown as CustomerForSegment);
 
   function toggleReceipt(orderId: string) {
     setOpenReceipts((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
@@ -460,9 +462,19 @@ export function CustomerDetail({ customer, salesReps, orders, sessions, aiPredic
             {initials}
           </div>
           <div>
-            <h1 style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, fontSize: 30, color: ink, letterSpacing: "-0.01em" }}>
-              {displayName}
-            </h1>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 style={{ fontFamily: "var(--font-fraunces), serif", fontWeight: 400, fontSize: 30, color: ink, letterSpacing: "-0.01em" }}>
+                {displayName}
+              </h1>
+              {autoSegType && (
+                <span
+                  className="text-[11px] font-medium px-[9px] py-[3px] rounded-xl"
+                  style={{ background: AUTO_SEGMENT_BADGE_COLORS[autoSegType].bg, color: AUTO_SEGMENT_BADGE_COLORS[autoSegType].text }}
+                >
+                  {SEGMENT_META[autoSegType].name}
+                </span>
+              )}
+            </div>
             <p style={{ color: inkMuted, fontSize: 14 }}>{customer.email}</p>
             {returnStats && (
               <div className="mt-2">

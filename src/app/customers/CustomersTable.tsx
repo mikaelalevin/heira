@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { parseReturnStats, returnRateColor } from "@/lib/returns";
+import { getPrimarySegment, SEGMENT_META, AUTO_SEGMENT_BADGE_COLORS, type CustomerForSegment } from "@/lib/segments";
 
 interface SalesRep {
   id: string;
@@ -65,31 +66,12 @@ function segmentColor(index: number) {
   return SEG_PALETTE[index % SEG_PALETTE.length];
 }
 
-// Computes the auto-segment label based on purchase history
+// Computes the auto-segment badge based on purchase history, using the same
+// segment definitions as the segments pages so the two never disagree.
 function getAutoSegment(c: Customer): { label: string; bg: string; text: string } | null {
-  const now = Date.now();
-  const lastOrderMs = c.last_order_at ? new Date(c.last_order_at).getTime() : null;
-  const daysSinceLast = lastOrderMs ? Math.floor((now - lastOrderMs) / 86_400_000) : null;
-  const ninetyDaysAgo = now - 90 * 86_400_000;
-  const orders = c.order_count ?? 0;
-  const spent = c.total_spent ?? 0;
-
-  if (c.email?.endsWith("@icloud.com")) {
-    return { label: "Vänner & familj", bg: "#E8E3C8", text: "#6A5C1E" };
-  }
-  if (spent >= 5000 && orders >= 3) {
-    return { label: "Darlings", bg: "#F2E5C5", text: "#6A4E1B" };
-  }
-  if (orders >= 2 && lastOrderMs && lastOrderMs >= ninetyDaysAgo) {
-    return { label: "Stammisar", bg: "#F4DDD9", text: "#6F3F3A" };
-  }
-  if (orders === 1) {
-    return { label: "Nya kunder", bg: "#DDE7D7", text: "#3E4F36" };
-  }
-  if (orders >= 1 && (!lastOrderMs || lastOrderMs < ninetyDaysAgo)) {
-    return { label: "Inaktiva", bg: "#F2E8D0", text: "#5A4232" };
-  }
-  return null;
+  const type = getPrimarySegment(c as unknown as CustomerForSegment);
+  if (!type) return null;
+  return { label: SEGMENT_META[type].name, ...AUTO_SEGMENT_BADGE_COLORS[type] };
 }
 
 // Positions a fixed-position dropdown below its trigger button, flipping to open
